@@ -28,6 +28,15 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#define GPIO_PAD_CTRL	((SC_PAD_CONFIG_NORMAL << PADRING_CONFIG_SHIFT) | \
+			(SC_PAD_ISO_OFF << PADRING_LPCONFIG_SHIFT) | \
+			(SC_PAD_28FDSOI_DSE_DV_LOW << PADRING_DSE_SHIFT) | \
+			(SC_PAD_28FDSOI_PS_PU << PADRING_PULL_SHIFT))
+
+static iomux_cfg_t usdhc2_sd_pwr[] = {
+	SC_P_USDHC1_RESET_B | MUX_PAD_CTRL(GPIO_PAD_CTRL),
+};
+
 static struct var_eeprom eeprom = {0};
 
 void spl_board_init(void)
@@ -59,10 +68,28 @@ void spl_board_init(void)
 #endif
 
 	memset(ep, 0, sizeof(*ep));
-	if (!var_scu_eeprom_read_header(&eeprom))
+	if (!var_scu_eeprom_read_header(&eeprom)) {
 		/* Copy EEPROM contents to DRAM */
 		memcpy(ep, &eeprom, sizeof(*ep));
 
+		/*
+		 * The pad configuration is need to avoid failure when we do reboot from uSD
+		 * with SP8CustomBoard. The GPIO4,7 used to reset the uSD go low at reboot so when
+		 * SPL try to access uSD fails. The following error messages are printed:
+		 *
+		 * U-Boot SPL 2021.04-lf_v2021.04_var03+ga36a857455 (Mar 13 2022 - 11:33:18 +0000)
+		 * Normal Boot
+		 * Trying to boot from MMC2_2
+		 * Card did not respond to voltage select! : -110
+		 * spl: mmc init failed with error: -95
+		 * SPL: failed to boot from all boot devices
+		 * ### ERROR ### Please RESET the board ###
+		 *
+		 * To fix the issue we configure the pad like device tree configuration (0x00000021);
+		 */
+		if (var_get_board_id(ep) == SPEAR_MX8)
+			imx8_iomux_setup_multiple_pads(usdhc2_sd_pwr, ARRAY_SIZE(usdhc2_sd_pwr));
+	}
 #ifdef CONFIG_SPL_SERIAL_SUPPORT
 	puts("Normal Boot\n");
 #endif
