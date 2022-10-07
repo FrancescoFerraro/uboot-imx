@@ -2,7 +2,7 @@
 /*
  * Copyright 2020 NXP
  */
-
+#if 0
 #include "imx8mm-u-boot.dtsi"
 
 / {
@@ -173,3 +173,4 @@
 &blob_2d_dmem {
 			filename = "ddr4_dmem_2d.bin";
 };
+#endif

@@ -2,7 +2,7 @@
 /*
  * Copyright 2019, 2021 NXP
  */
-
+#if 0
 #include "imx8mm-u-boot.dtsi"
 
 / {
@@ -182,3 +182,4 @@
 	/delete-property/ assigned-clock-parents;
 	/delete-property/ assigned-clock-rates;
 };
+#endif

@@ -29,20 +29,7 @@
 /* For RAW image gives a error info not panic */
 #define CONFIG_SPL_ABORT_ON_RAW_IMAGE
 
-#if defined(CONFIG_IMX8M_LPDDR4) && defined(CONFIG_TARGET_IMX8MM_EVK)
-#define CONFIG_POWER_PCA9450
-#else
 #define CONFIG_POWER_BD71837
-#endif
-
-#define CONFIG_SPL_NAND_BASE
-#define CONFIG_SPL_NAND_IDENT
-#define CONFIG_SYS_NAND_U_BOOT_OFFS 	0x4000000 /* Put the FIT out of first 64MB boot area */
-
-/* Set a redundant offset in nand FIT mtdpart. The new uuu will burn full boot image (not only FIT part) to the mtdpart, so we check both two offsets */
-#define CONFIG_SYS_NAND_U_BOOT_OFFS_REDUND \
-	(CONFIG_SYS_NAND_U_BOOT_OFFS + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR * 512 - 0x8400)
-
 #endif
 
 #define CONFIG_CMD_READ
@@ -60,10 +47,6 @@
 #define CONFIG_FEC_MXC_PHYADDR          0
 
 #define IMX_FEC_BASE			0x30BE0000
-#endif
-
-#ifdef CONFIG_NAND_BOOT
-#define MFG_NAND_PARTITION "mtdparts=gpmi-nand:64m(nandboot),16m(nandfit),32m(nandkernel),16m(nanddtb),8m(nandtee),-(nandrootfs)"
 #endif
 
 #ifdef CONFIG_DISTRO_DEFAULTS
@@ -205,7 +188,13 @@
 #define PHYS_SDRAM                      0x40000000
 #define PHYS_SDRAM_SIZE			0x80000000 /* 2GB DDR */
 
-#define CONFIG_MXC_UART_BASE		UART2_BASE_ADDR
+#if 1
+// DART-MX8M-MINI
+#define CONFIG_MXC_UART_BASE		UART1_BASE_ADDR
+#else
+// VAR_SOM_MX8M_MINI
+#define CONFIG_MXC_UART_BASE		UART4_BASE_ADDR
+#endif
 
 /* Monitor Command Prompt */
 #define CONFIG_SYS_CBSIZE		2048
@@ -234,15 +223,6 @@
 
 #define CONFIG_SYS_FSL_FSPI_AHB
 #endif
-
-#ifdef CONFIG_NAND_MXS
-#define CONFIG_CMD_NAND_TRIMFFS
-
-/* NAND stuff */
-#define CONFIG_SYS_MAX_NAND_DEVICE     1
-#define CONFIG_SYS_NAND_BASE           0x20000000
-#define CONFIG_SYS_NAND_USE_FLASH_BBT
-#endif /* CONFIG_NAND_MXS */
 
 /* USB configs */
 #ifndef CONFIG_SPL_BUILD
