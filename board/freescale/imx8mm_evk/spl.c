@@ -135,7 +135,7 @@ printf ("fefr: %s\n", __func__);
 			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
 			imx_iomux_v3_setup_multiple_pads(usdhc2_pads,
 						ARRAY_SIZE(usdhc2_pads));
-#if 0
+#if 1
 			// VAR-SOM-MX8M-MINI
 			imx_iomux_v3_setup_multiple_pads(usdhc2_pwr_pads_som,
 					ARRAY_SIZE(usdhc2_pwr_pads_som));

@@ -188,7 +188,7 @@
 #define PHYS_SDRAM                      0x40000000
 #define PHYS_SDRAM_SIZE			0x80000000 /* 2GB DDR */
 
-#if 1
+#if 0
 // DART-MX8M-MINI
 #define CONFIG_MXC_UART_BASE		UART1_BASE_ADDR
 #else

@@ -50,7 +50,7 @@ int board_early_init_f(void)
 
 	set_wdog_reset(wdog);
 
-#if 1
+#if 0
 	//DART_MX8M_MINI
 	init_uart_clk(0);
 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
