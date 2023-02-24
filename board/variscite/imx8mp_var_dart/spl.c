@@ -6,22 +6,14 @@
  */
 #define DEBUG
 #include <common.h>
-#include <cpu_func.h>
 #include <hang.h>
-#include <image.h>
 #include <init.h>
+#include <log.h>
 #include <spl.h>
-#include <asm/io.h>
-#include <errno.h>
-#include <asm/io.h>
 #include <asm/global_data.h>
-#include <asm/arch/sys_proto.h>
-#include <asm/mach-imx/iomux-v3.h>
 #include <asm/arch/imx8mp_pins.h>
+#include <asm/arch/sys_proto.h>
 #include <asm/mach-imx/boot_mode.h>
-#include <asm/mach-imx/boot_mode.h>
-#include <asm/mach-imx/gpio.h>
-#include <asm/mach-imx/mxc_i2c.h>
 #include <power/pmic.h>
 
 #include <power/pca9450.h>
@@ -30,7 +22,13 @@
 #include <dm/device.h>
 #include <dm/uclass-internal.h>
 #include <dm/device-internal.h>
+#include <asm/mach-imx/gpio.h>
+#include <asm/mach-imx/iomux-v3.h>
+#include <asm/mach-imx/mxc_i2c.h>
+#include <fsl_esdhc_imx.h>
+#include <mmc.h>
 #include <asm/arch/ddr.h>
+
 
 #include "../common/imx8_eeprom.h"
 #include "imx8mp_var_dart.h"
@@ -73,53 +71,6 @@ static void spl_dram_init(void)
 	ddr_init(&dram_timing);
 }
 
-#if CONFIG_IS_ENABLED(POWER_LEGACY)
-#define PMIC_I2C_BUS	0
-int power_init_board(void)
-{
-	struct pmic *p;
-	int ret;
-
-	ret = power_pca9450_init(PMIC_I2C_BUS, 0x25);
-	if (ret)
-		printf("power init failed");
-	p = pmic_get("PCA9450");
-	pmic_probe(p);
-
-	/* BUCKxOUT_DVS0/1 control BUCK123 output */
-	pmic_reg_write(p, PCA9450_BUCK123_DVS, 0x29);
-
-	/*
-	 * increase VDD_SOC to typical value 0.95V before first
-	 * DRAM access, set DVS1 to 0.85v for suspend.
-	 * Enable DVS control through PMIC_STBY_REQ and
-	 * set B1_ENMODE=1 (ON by PMIC_ON_REQ=H)
-	 */
-	pmic_reg_write(p, PCA9450_BUCK1OUT_DVS0, 0x1C);
-	pmic_reg_write(p, PCA9450_BUCK1OUT_DVS1, 0x14);
-	pmic_reg_write(p, PCA9450_BUCK1CTRL, 0x59);
-
-	/* Kernel uses OD/OD freq for SOC */
-	/* To avoid timing risk from SOC to ARM,increase VDD_ARM to OD voltage 0.95v */
-	pmic_reg_write(p, PCA9450_BUCK2OUT_DVS0, 0x1C);
-
-	/* set WDOG_B_CFG to cold reset */
-	pmic_reg_write(p, PCA9450_RESET_CTRL, 0xA1);
-
-	/* Set LDO4 voltage to 1.8V */
-	pmic_reg_write(p, PCA9450_LDO4CTRL, 0xCA);
-
-	/* Enable I2C level translator */
-	pmic_reg_write(p, PCA9450_CONFIG2, 0x03);
-
-	/* Set BUCK5 voltage to 1.85V to fix Ethernet PHY reset */
-	if (var_detect_board_id() == BOARD_ID_DART)
-		pmic_reg_write(p, PCA9450_BUCK5OUT, 0x32);
-
-	return 0;
-}
-#endif
-
 void spl_board_init(void)
 {
 	struct var_eeprom *ep = VAR_EEPROM_DATA;
@@ -132,10 +83,11 @@ void spl_board_init(void)
 		if (ret)
 			printf("Failed to initialize caam_jr: %d\n", ret);
 	}
-
-	/* Set GIC clock to 500Mhz for OD VDD_SOC. Kernel driver does not allow to change it.
-	 * Should set the clock after PMIC setting done.
-	 * Default is 400Mhz (system_pll1_800m with div = 2) set by ROM for ND VDD_SOC
+	/*
+	 * Set GIC clock to 500Mhz for OD VDD_SOC. Kernel driver does
+	 * not allow to change it. Should set the clock after PMIC
+	 * setting done. Default is 400Mhz (system_pll1_800m with div = 2)
+	 * set by ROM for ND VDD_SOC
 	 */
 	clock_enable(CCGR_GIC, 0);
 	clock_set_target_val(GIC_CLK_ROOT, CLK_ROOT_ON | CLK_ROOT_SOURCE_SEL(5));
@@ -146,6 +98,61 @@ void spl_board_init(void)
 	/* Copy EEPROM contents to DRAM */
 	memcpy(ep, &eeprom, sizeof(*ep));
 }
+
+#if CONFIG_IS_ENABLED(DM_PMIC_PCA9450)
+int power_init_board(void)
+{
+	struct udevice *dev;
+	int ret;
+
+	ret = pmic_get("pca9450@25", &dev);
+	if (ret == -ENODEV) {
+		puts("No pca9450@25\n");
+		return 0;
+	}
+	if (ret != 0)
+		return ret;
+
+	/* BUCKxOUT_DVS0/1 control BUCK123 output */
+	pmic_reg_write(dev, PCA9450_BUCK123_DVS, 0x29);
+
+	/*
+	 * increase VDD_SOC to typical value 0.95V before first
+	 * DRAM access, set DVS1 to 0.85v for suspend.
+	 * Enable DVS control through PMIC_STBY_REQ and
+	 * set B1_ENMODE=1 (ON by PMIC_ON_REQ=H)
+	 */
+	pmic_reg_write(dev, PCA9450_BUCK1OUT_DVS0, 0x1C);
+	pmic_reg_write(dev, PCA9450_BUCK1OUT_DVS1, 0x14);
+	pmic_reg_write(dev, PCA9450_BUCK1CTRL, 0x59);
+
+	/* Kernel uses OD/OD freq for SOC */
+	/* To avoid timing risk from SOC to ARM,increase VDD_ARM to OD voltage 0.95v */
+	pmic_reg_write(dev, PCA9450_BUCK2OUT_DVS0, 0x1C);
+
+	/* set WDOG_B_CFG to cold reset */
+	pmic_reg_write(dev, PCA9450_RESET_CTRL, 0xA1);
+
+#if 0
+	Check if the following configueations are done in the dtb!!!
+	/* Set LDO4 voltage to 1.8V */
+	pmic_reg_write(p, PCA9450_LDO4CTRL, 0xCA);
+
+	/* Enable I2C level translator */
+	pmic_reg_write(p, PCA9450_CONFIG2, 0x03);
+
+	/* Set BUCK5 voltage to 1.85V to fix Ethernet PHY reset */
+	if (var_detect_board_id() == BOARD_ID_DART)
+		pmic_reg_write(p, PCA9450_BUCK5OUT, 0x32);
+
+#endif
+
+	return 0;
+}
+#endif
+
+
+
 
 #ifdef CONFIG_SPL_LOAD_FIT
 int board_fit_config_name_match(const char *name)
@@ -174,7 +181,68 @@ int board_fit_config_name_match(const char *name)
 }
 #endif
 
-#ifdef CONFIG_POWER
+void board_init_f(ulong dummy)
+{
+	int ret;
+	struct udevice *dev;
+
+	/* Clear the BSS. */
+	memset(__bss_start, 0, __bss_end - __bss_start);
+
+	arch_cpu_init();
+
+	timer_init();
+
+	ret = spl_early_init();
+	if (ret) {
+		hang();
+	}
+
+	/* UART can be initialized only after DM setup in spl_early_init().
+	 * SOM and DART have different debug UARTs, board detection code
+	 * uses GPIO, which can be accessed only after DM is initialized.
+	*/
+	board_early_init_f();
+
+	/* Can run only after UART clock is enabled */
+	preloader_console_init();
+
+	ret = uclass_get_device_by_name(UCLASS_CLK,
+					"clock-controller@30380000",
+					&dev);
+	if (ret < 0) {
+		printf("Failed to find clock node. Check device tree\n");
+		hang();
+	}
+
+	enable_tzc380();
+
+#if 0
+#if CONFIG_IS_ENABLED(DM_PMIC_PCA9450)
+	/* I2C Bus 0 initialization */
+	if (var_detect_board_id() == BOARD_ID_DART)
+		setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pads_dart);
+	else
+		setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pads_som);
+#endif
+
+	if (var_detect_board_id() == BOARD_ID_DART) {
+		/* I2C Bus 1 initialization */
+		setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c1_pads_dart);
+	}
+#endif
+
+	/* PMIC initialization */
+	power_init_board();
+
+	/* DDR initialization */
+	spl_dram_init();
+
+	board_init_r(NULL, 0);
+}
+
+#if 0
+#if CONFIG_IS_ENABLED(DM_PMIC_PCA9450)
 #define I2C_PAD_CTRL (PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PE)
 
 struct i2c_pads_info i2c_pads_dart = {
@@ -216,60 +284,4 @@ struct i2c_pads_info i2c_pads_som = {
 	},
 };
 #endif
-
-void board_init_f(ulong dummy)
-{
-	int ret;
-	struct udevice *dev;
-
-	/* Clear the BSS. */
-	memset(__bss_start, 0, __bss_end - __bss_start);
-
-	arch_cpu_init();
-
-	timer_init();
-
-	ret = spl_early_init();
-	if (ret)
-		hang();
-
-	/* UART can be initialized only after DM setup in spl_early_init().
-	 * SOM and DART have different debug UARTs, board detection code
-	 * uses GPIO, which can be accessed only after DM is initialized.
-	*/
-	board_early_init_f();
-
-	/* Can run only after UART clock is enabled */
-	preloader_console_init();
-
-	ret = uclass_get_device_by_name(UCLASS_CLK,
-					"clock-controller@30380000",
-					&dev);
-	if (ret < 0) {
-		printf("Failed to find clock node. Check device tree\n");
-		hang();
-	}
-
-	enable_tzc380();
-
-#ifdef CONFIG_POWER
-	/* I2C Bus 0 initialization */
-	if (var_detect_board_id() == BOARD_ID_DART)
-		setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pads_dart);
-	else
-		setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pads_som);
 #endif
-
-	if (var_detect_board_id() == BOARD_ID_DART) {
-		/* I2C Bus 1 initialization */
-		setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c1_pads_dart);
-	}
-
-	/* PMIC initialization */
-	power_init_board();
-
-	/* DDR initialization */
-	spl_dram_init();
-
-	board_init_r(NULL, 0);
-}
