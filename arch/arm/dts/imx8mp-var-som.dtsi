@@ -56,7 +56,7 @@
 	pmic: pca9450@25 {
 		reg = <0x25>;
 		compatible = "nxp,pca9450c";
-		/* PMIC PCA9450 PMIC_nINT GPIO1_IO3 */
+		/* PMIC PCA9450 PMIC_nINT GPIO5_IO4 */
 		pinctrl-0 = <&pinctrl_pmic>;
 		gpio_intr = <&gpio5 4 GPIO_ACTIVE_LOW>;
 		status = "okay";
@@ -217,7 +217,7 @@
 
 	pinctrl_pmic: pmicgrp {
 		fsl,pins = <
-			MX8MP_IOMUXC_GPIO1_IO03__GPIO1_IO03				0x41
+			MX8MP_IOMUXC_SPDIF_RX__GPIO5_IO04				0x1c0
 		>;
 	};
 
