@@ -144,11 +144,7 @@
 			"if test $sdram_size -le 1024; then " \
 				"setenv cma_size cma=576M; " \
 			"else " \
-				"if test $sdram_size -le 2048; then " \
-					"setenv cma_size cma=640M; " \
-				"else " \
-					"setenv cma_size cma=960M; " \
-				"fi; " \
+				"setenv cma_size cma=960M; " \
 			"fi; " \
 		"fi;\0" \
 	"mmcboot=echo Booting from mmc ...; " \
@@ -216,7 +212,7 @@
 /* DDR configs */
 #define CONFIG_SYS_SDRAM_BASE		0x40000000
 #define PHYS_SDRAM			0x40000000
-#define DEFAULT_SDRAM_SIZE		(2048UL * SZ_1M)
+#define DEFAULT_SDRAM_SIZE		(1024UL * SZ_1M)
 
 #define CONFIG_MXC_UART_BASE		UART1_BASE_ADDR
 
