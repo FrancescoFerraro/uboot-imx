@@ -154,7 +154,7 @@
 		"root=ubi0:rootfs rootfstype=ubifs\0" \
 	"rootfs_device=nand\0" \
 	"boot_device=nand\0" \
-	"nandboot=nand read ${loadaddr} 0x400000 0x800000; " \
+	"nandboot=nand read ${loadaddr} 0x400000 0xc00000; " \
 		"nand read ${fdt_addr} 0x3e0000 0x20000; " \
 		"bootm ${loadaddr} - ${fdt_addr};\0" \
 	"bootcmd=" \
