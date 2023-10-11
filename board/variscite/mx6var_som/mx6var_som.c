@@ -757,6 +757,7 @@ static void disable_lvds(struct display_info_t const *dev)
 	writel(reg, &iomux->gpr[2]);
 }
 
+#ifdef VAR_UBOOT_HDMI_SUPPORT
 static void do_enable_hdmi(struct display_info_t const *dev)
 {
 	disable_lvds(dev);
@@ -767,6 +768,7 @@ static void do_enable_hdmi(struct display_info_t const *dev)
 	 * - at least on some SOMs.
 	 */
 }
+#endif
 
 static void lvds_enable_disable(struct display_info_t const *dev)
 {
@@ -803,6 +805,7 @@ static int detect_mx6cb_rdisplay(struct display_info_t const *dev)
 #define MHZ2PS(f)	(1000000/(f))
 
 struct display_info_t const displays[] = {{
+#ifdef VAR_UBOOT_HDMI_SUPPORT
 	.bus	= -1,
 	.addr	= 0,
 	.pixfmt	= IPU_PIX_FMT_RGB24,
@@ -823,6 +826,7 @@ struct display_info_t const displays[] = {{
 		.sync           = 0,
 		.vmode          = FB_VMODE_NONINTERLACED
 } }, {
+#endif
 	.bus	= -1,
 	.addr	= 0,
 	.pixfmt	= IPU_PIX_FMT_RGB666,
@@ -899,6 +903,7 @@ static void setup_display(void)
 	gpio_direction_output(VAR_SOM_BACKLIGHT_EN , 0);
 
 	enable_ipu_clock();
+
 	imx_setup_hdmi();
 
 	/* Turn on LDB0, LDB1, IPU,IPU DI0 clocks */
