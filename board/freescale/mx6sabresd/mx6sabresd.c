@@ -174,13 +174,13 @@ static void enable_lvds(struct display_info_t const *dev)
 #ifdef CONFIG_SYS_I2C_LEGACY
 static struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
-		.i2c_mode = MX6_PAD_KEY_COL3__I2C2_SCL | I2C_PAD,
-		.gpio_mode = MX6_PAD_KEY_COL3__GPIO4_IO12 | I2C_PAD,
+		.i2c_mode = MX6DL_PAD_KEY_COL3__I2C2_SCL | I2C_PAD,
+		.gpio_mode = MX6DL_PAD_KEY_COL3__GPIO4_IO12 | I2C_PAD,
 		.gp = IMX_GPIO_NR(4, 12)
 	},
 	.sda = {
-		.i2c_mode = MX6_PAD_KEY_ROW3__I2C2_SDA | I2C_PAD,
-		.gpio_mode = MX6_PAD_KEY_ROW3__GPIO4_IO13 | I2C_PAD,
+		.i2c_mode = MX6DL_PAD_KEY_ROW3__I2C2_SDA | I2C_PAD,
+		.gpio_mode = MX6DL_PAD_KEY_ROW3__GPIO4_IO13 | I2C_PAD,
 		.gp = IMX_GPIO_NR(4, 13)
 	}
 };

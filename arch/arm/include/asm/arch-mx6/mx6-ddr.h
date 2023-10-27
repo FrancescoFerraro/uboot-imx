@@ -5,7 +5,7 @@
 #ifndef __ASM_ARCH_MX6_DDR_H__
 #define __ASM_ARCH_MX6_DDR_H__
 
-#ifndef CONFIG_SPL_BUILD
+#if 0
 #if defined(CONFIG_MX6Q) || defined(CONFIG_MX6QP)
 #include "mx6q-ddr.h"
 #else

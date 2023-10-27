@@ -16,11 +16,8 @@
 /* MMC Configs */
 #define CONFIG_SYS_FSL_ESDHC_ADDR      0
 
-#define CONFIG_FEC_MXC
 #define CONFIG_FEC_XCV_TYPE		RGMII
 #define CONFIG_ETHPRIME			"eth0"
-
-#define CONFIG_PHY_ATHEROS
 
 #ifdef CONFIG_MX6S
 #define SYS_NOSMP "nosmp"
@@ -70,8 +67,6 @@
 #else
 #define EMMC_ENV ""
 #endif
-
-#define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 
 #if defined(CONFIG_NAND_BOOT)
 	/*
