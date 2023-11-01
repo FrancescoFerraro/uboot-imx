@@ -15,9 +15,9 @@
 #endif
 
 /* Reserve 4Bytes in OCRAM for sending RAM size from SPL to U-Boot */
-//#undef CONFIG_SPL_MAX_SIZE
-//#define CONFIG_SPL_MAX_SIZE	0xFFFC  /* ==0x10000-0x4 */
-//#define RAM_SIZE_ADDR	((CONFIG_SPL_TEXT_BASE) + (CONFIG_SPL_MAX_SIZE))
+#undef CONFIG_SPL_MAX_SIZE
+#define CONFIG_SPL_MAX_SIZE	0xFFFC  /* ==0x10000-0x4 */
+#define RAM_SIZE_ADDR	((CONFIG_SPL_TEXT_BASE) + (CONFIG_SPL_MAX_SIZE))
 
 #define CONFIG_MXC_UART_BASE	UART1_BASE
 #define CONSOLE_DEV		"ttymxc0"

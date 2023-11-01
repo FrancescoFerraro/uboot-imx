@@ -15,18 +15,20 @@
 #include <i2c.h>
 #include "mx6var_eeprom_v1.h"
 
+#include <asm/io.h>
+#include <cpu_func.h>
 static void var_eeprom_v1_print_production_info(const struct var_eeprom_v1_cfg *p_var_eeprom_v1_cfg)
 {
 	printf("\nPart number: %.*s\n",
-			sizeof(p_var_eeprom_v1_cfg->header.part_number) - 1,
+			(int)sizeof(p_var_eeprom_v1_cfg->header.part_number) - 1,
 			(char *) p_var_eeprom_v1_cfg->header.part_number);
 
 	printf("Assembly: %.*s\n",
-			sizeof(p_var_eeprom_v1_cfg->header.assembly) - 1,
+			(int)sizeof(p_var_eeprom_v1_cfg->header.assembly) - 1,
 			(char *) p_var_eeprom_v1_cfg->header.assembly);
 
 	printf("Date of production: %.*s\n",
-			sizeof(p_var_eeprom_v1_cfg->header.date) - 1,
+			(int)sizeof(p_var_eeprom_v1_cfg->header.date) - 1,
 			(char *) p_var_eeprom_v1_cfg->header.date);
 }
 

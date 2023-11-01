@@ -138,9 +138,18 @@ static enum current_board get_board_indx(void)
 	hang();
 }
 
+/*
+ * Returns DRAM size in MiB
+ */
+static u32 var_get_ram_size(void)
+{
+	u32 *p_ram_size = (u32 *)RAM_SIZE_ADDR;
+	return *p_ram_size;
+}
+
 int dram_init(void)
 {
-	gd->ram_size = (u32)1024 * 1024 * 1024;
+	gd->ram_size = var_get_ram_size() * 1024 * 1024;
 	return 0;
 }
 
@@ -225,7 +234,6 @@ static void setup_iomux_uart(void)
 	SETUP_IOMUX_PADS(uart1_pads);
 }
 
-/// ?????????
 #ifdef CONFIG_ENV_IS_IN_MMC
 int mmc_map_to_kernel_blk(int dev_no)
 {
@@ -237,7 +245,6 @@ int mmc_map_to_kernel_blk(int dev_no)
 
 #ifdef CONFIG_FSL_ESDHC_IMX
 #if !CONFIG_IS_ENABLED(DM_MMC)
-// ????????
 static iomux_v3_cfg_t const usdhc1_pads[] = {
 	IOMUX_PADS(PAD_SD1_CLK__SD1_CLK		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
 	IOMUX_PADS(PAD_SD1_CMD__SD1_CMD		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
@@ -329,7 +336,6 @@ static enum mmc_boot_device get_mmc_boot_device(void)
 
 	return (reg & 0x3);
 }
-#endif
 
 int board_mmc_init(struct bd_info *bis)
 {
@@ -372,8 +378,9 @@ int board_mmc_init(struct bd_info *bis)
 
 	return fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
 }
-#endif
-#endif
+#endif /* ifdef CONFIG_SPL_BUILD */
+#endif /* if !CONFIG_IS_ENABLED(DM_MMC) */
+#endif /* ifdef CONFIG_FSL_ESDHC_IMX */
 
 int board_phy_config(struct phy_device *phydev)
 {
@@ -662,7 +669,9 @@ int overwrite_console(void)
 int board_early_init_f(void)
 {
 	setup_iomux_uart();
-
+#ifdef CONFIG_SYS_I2C_LEGACY
+	setup_local_i2c();
+#endif
 #ifdef CONFIG_NAND_MXS
 	setup_gpmi_nand();
 #endif
@@ -672,10 +681,6 @@ int board_early_init_f(void)
 
 int board_init(void)
 {
-#ifdef CONFIG_SYS_I2C_LEGACY
-	setup_local_i2c();
-#endif
-
 #if defined(CONFIG_VIDEO_IPUV3)
 	setup_display();
 #elif defined(CONFIG_IMX_HDMI)
@@ -815,17 +820,25 @@ int is_recovery_key_pressing(void)
 #include <asm/arch/mx6-ddr.h>
 #include <spl.h>
 #include <linux/libfdt.h>
+#include "mx6var_dram.h"
 
 #ifdef CONFIG_SPL_OS_BOOT
 int spl_start_uboot(void)
 {
-	gpio_request(KEY_VOL_UP, "KEY Volume UP");
-	gpio_direction_input(KEY_VOL_UP);
-
-	/* Only enter in Falcon mode if KEY_VOL_UP is pressed */
-	return gpio_get_value(KEY_VOL_UP);
+	return 0;
 }
 #endif
+
+/*
+ * Writes RAM size (MiB) to RAM_SIZE_ADDR so U-Boot can read it
+ */
+void var_set_ram_size(u32 ram_size)
+{
+	u32 *p_ram_size = (u32 *)RAM_SIZE_ADDR;
+	if (ram_size > 3840)
+		ram_size = 3840;
+	*p_ram_size = ram_size;
+}
 
 static void ccgr_init(void)
 {
@@ -855,120 +868,19 @@ static void spl_mx6qd_dram_setup_iomux_check_reset(void)
 	}
 }
 
-static void spl_mx6dlsl_dram_setup_iomux(void)
-{
-	volatile struct mx6sdl_iomux_ddr_regs *mx6dl_ddr_iomux;
-	volatile struct mx6sdl_iomux_grp_regs *mx6dl_grp_iomux;
-
-	mx6dl_ddr_iomux = (struct mx6sdl_iomux_ddr_regs *) MX6SDL_IOM_DDR_BASE;
-	mx6dl_grp_iomux = (struct mx6sdl_iomux_grp_regs *) MX6SDL_IOM_GRP_BASE;
-
-	mx6dl_grp_iomux->grp_ddr_type   = (u32)0x000c0000;
-	mx6dl_grp_iomux->grp_ddrpke     = (u32)0x00000000;
-	mx6dl_ddr_iomux->dram_sdclk_0   = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_sdclk_1   = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_cas       = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_ras       = (u32)0x00000030;
-	mx6dl_grp_iomux->grp_addds      = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_reset     = (u32)0x000c0030;
-	mx6dl_ddr_iomux->dram_sdcke0    = (u32)0x00003000;
-	mx6dl_ddr_iomux->dram_sdcke1    = (u32)0x00003000;
-	mx6dl_ddr_iomux->dram_sdba2     = (u32)0x00000000;
-	mx6dl_ddr_iomux->dram_sdodt0    = (u32)0x00003030;
-	mx6dl_ddr_iomux->dram_sdodt1    = (u32)0x00003030;
-	mx6dl_grp_iomux->grp_ctlds      = (u32)0x00000030;
-	mx6dl_grp_iomux->grp_ddrmode_ctl= (u32)0x00020000;
-	mx6dl_ddr_iomux->dram_sdqs0     = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_sdqs1     = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_sdqs2     = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_sdqs3     = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_sdqs4     = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_sdqs5     = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_sdqs6     = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_sdqs7     = (u32)0x00000030;
-	mx6dl_grp_iomux->grp_ddrmode    = (u32)0x00020000;
-	mx6dl_grp_iomux->grp_b0ds       = (u32)0x00000030;
-	mx6dl_grp_iomux->grp_b1ds       = (u32)0x00000030;
-	mx6dl_grp_iomux->grp_b2ds       = (u32)0x00000030;
-	mx6dl_grp_iomux->grp_b3ds       = (u32)0x00000030;
-	mx6dl_grp_iomux->grp_b4ds       = (u32)0x00000030;
-	mx6dl_grp_iomux->grp_b5ds       = (u32)0x00000030;
-	mx6dl_grp_iomux->grp_b6ds       = (u32)0x00000030;
-	mx6dl_grp_iomux->grp_b7ds       = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_dqm0      = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_dqm1      = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_dqm2      = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_dqm3      = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_dqm4      = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_dqm5      = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_dqm6      = (u32)0x00000030;
-	mx6dl_ddr_iomux->dram_dqm7      = (u32)0x00000030;
-}
-
-static void spl_dram_init_mx6solo_1gb(void)
-{
-	volatile struct mmdc_p_regs *mmdc_p0;
-	mmdc_p0 = (struct mmdc_p_regs *) MMDC_P0_BASE_ADDR;
-
-	/* ZQ */
-	mmdc_p0->mpzqhwctrl     = (u32)0xa1390003;
-	/* Write leveling */
-	mmdc_p0->mpwldectrl0    = (u32)0x001F001F;
-	mmdc_p0->mpwldectrl1    = (u32)0x001F001F;
-
-	mmdc_p0->mpdgctrl0      = (u32)0x42440244;
-	mmdc_p0->mpdgctrl1      = (u32)0x02280228;
-
-	mmdc_p0->mprddlctl      = (u32)0x484A4C4A;
-
-	mmdc_p0->mpwrdlctl      = (u32)0x38363236;
-	/* Read data bit delay */
-	mmdc_p0->mprddqby0dl    = (u32)0x33333333;
-	mmdc_p0->mprddqby1dl    = (u32)0x33333333;
-	mmdc_p0->mprddqby2dl    = (u32)0x33333333;
-	mmdc_p0->mprddqby3dl    = (u32)0x33333333;
-	/* Complete calibration by forced measurement */
-	mmdc_p0->mpmur0         = (u32)0x00000800;
-
-	mmdc_p0->mdpdc          = (u32)0x00020025;
-	mmdc_p0->mdotc          = (u32)0x00333030;
-	mmdc_p0->mdcfg0         = (u32)0x676B5313;
-	mmdc_p0->mdcfg1         = (u32)0xB66E8B63;
-	mmdc_p0->mdcfg2         = (u32)0x01ff00db;
-	mmdc_p0->mdmisc         = (u32)0x00001740;
-
-	mmdc_p0->mdscr          = (u32)0x00008000;
-	mmdc_p0->mdrwd          = (u32)0x000026d2;
-	mmdc_p0->mdor           = (u32)0x006B1023;
-	mmdc_p0->mdasp          = (u32)0x00000027;
-
-	mmdc_p0->mdctl          = (u32)0x84190000;
-
-	mmdc_p0->mdscr          = (u32)0x04008032;
-	mmdc_p0->mdscr          = (u32)0x00008033;
-	mmdc_p0->mdscr          = (u32)0x00048031;
-	mmdc_p0->mdscr          = (u32)0x05208030;
-	mmdc_p0->mdscr          = (u32)0x04008040;
-
-	mmdc_p0->mdref          = (u32)0x00005800;
-	mmdc_p0->mpodtctrl      = (u32)0x00011117;
-
-	mmdc_p0->mdpdc          = (u32)0x00025565;
-	mmdc_p0->mdscr          = (u32)0x00000000;
-}
-
 static void spl_dram_init(void)
 {
-	spl_mx6dlsl_dram_setup_iomux();
-	spl_dram_init_mx6solo_1gb();
+	if (is_dart_board())
+		var_eeprom_v2_dram_init();
+	else
+		if (var_eeprom_v1_dram_init())
+			var_legacy_dram_init(is_som_solo());
+
 	spl_mx6qd_dram_setup_iomux_check_reset();
 }
 
 void board_init_f(ulong dummy)
 {
-	/* DDR initialization */
-	spl_dram_init();
-
 	/* setup AIPS and disable watchdog */
 	arch_cpu_init();
 
@@ -984,10 +896,12 @@ void board_init_f(ulong dummy)
 	/* UART clocks enabled and gd valid - init serial console */
 	preloader_console_init();
 
-	/* Clear the BSS. */
-	memset(__bss_start, 0, __bss_end - __bss_start);
+	/* DDR initialization */
+	spl_dram_init();
 
-	/* load/boot image from boot device */
+	/* Clear the BSS. */
+	memset(__bss_start, 0, __bss_end - __bss_start);	/* load/boot image from boot device */
+
 	board_init_r(NULL, 0);
 }
 #endif
