@@ -50,6 +50,7 @@
 #endif
 #endif /*CONFIG_FSL_FASTBOOT*/
 #include <hang.h>
+#include <splash.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -78,11 +79,19 @@ DECLARE_GLOBAL_DATA_PTR;
 bool lvds_enabled=false;
 
 /*
- * Returns true if the SOM is VAR-SOM-SOLO
+ * Returns true iff the SOM is VAR-SOM-SOLO
  */
 static bool is_som_solo(void)
 {
-	return 1;
+	bool ret;
+	int oldbus = i2c_get_bus_num();
+
+	i2c_set_bus_num(PMIC_I2C_BUS);
+	/* Probing for PMIC which is preset on all SOM types but SOM-SOLO */
+	ret = (0 != i2c_probe(CONFIG_POWER_PFUZE100_I2C_ADDR));
+
+	i2c_set_bus_num(oldbus);
+	return ret;
 }
 
 /*
@@ -90,13 +99,41 @@ static bool is_som_solo(void)
  */
 static bool is_solo_custom_board(void)
 {
-	return 0;
+	bool ret;
+	int oldbus = i2c_get_bus_num();
+
+	i2c_set_bus_num(1);
+	/* Probing for extra EEPROM present only on SOLOCustomBoard */
+	ret = (0 == i2c_probe(0x51));
+
+	i2c_set_bus_num(oldbus);
+	return ret;
 }
 
-
+/*
+ * Returns true if the carrier board is SymphonyBoard
+ */
 static bool is_symphony_board(void)
 {
-	return 1;
+	bool ret;
+	int oldbus = i2c_get_bus_num();
+
+	i2c_set_bus_num(0);
+	/* Probing for extra PCA9534 present only on SymphonyBoard */
+	ret = (0 == i2c_probe(0x20));
+
+	i2c_set_bus_num(oldbus);
+	return ret;
+}
+
+static bool is_cpu_pop_packaged(void)
+{
+	struct src *src_regs = (struct src *)SRC_BASE_ADDR;
+	u32 soc_sbmr = readl(&src_regs->sbmr1);
+	u8  boot_cfg3 = (soc_sbmr >> 16) & 0xFF;
+
+	/* DDR Memory Map config == 4KB Interleaving Enabled */
+	return ((boot_cfg3 & 0x30) == 0x20);
 }
 
 /*
@@ -105,7 +142,7 @@ static bool is_symphony_board(void)
  */
 static inline bool is_dart_board(void)
 {
-	return 0;
+	return is_cpu_pop_packaged();
 }
 
 /*
@@ -113,7 +150,7 @@ static inline bool is_dart_board(void)
  */
 static inline bool is_mx6_custom_board(void)
 {
-	return (0);
+	return (!is_dart_board() && !is_solo_custom_board() && !is_symphony_board());
 }
 
 enum current_board {
@@ -179,6 +216,24 @@ static void enable_backlight(void)
 
 	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE);
 }
+
+#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_ENV_SUPPORT)
+static int env_check(char *var, char *val)
+{
+	char *read_val;
+	if (var == NULL || val == NULL)
+		return 0;
+
+	read_val = env_get(var);
+
+	if ((read_val != NULL) &&
+			(strcmp(read_val, val) == 0)) {
+		return 1;
+	}
+
+	return 0;
+}
+#endif
 
 #ifdef CONFIG_SYS_I2C_LEGACY
 static struct i2c_pads_info mx6dl_i2c_pad_info1 = {
@@ -390,6 +445,72 @@ int board_phy_config(struct phy_device *phydev)
 	return 0;
 }
 
+#ifdef CONFIG_SPLASH_SCREEN
+#ifdef CONFIG_SPLASH_SOURCE
+static void set_splashsource_to_boot_rootfs(void)
+{
+	if (!env_check("splashsourceauto", "yes"))
+		return;
+
+#ifdef CONFIG_NAND_BOOT
+	env_set("splashsource", env_get("rootfs_device"));
+#else
+	if (mmc_get_env_dev() == 0)
+		env_set("splashsource", "sd");
+	else if (mmc_get_env_dev() == 1)
+		env_set("splashsource", "emmc");
+#endif
+}
+
+int splash_screen_prepare(void)
+{
+	int ret=0;
+
+	char sd_devpart_str[5];
+	char emmc_devpart_str[5];
+	u32 sd_part, emmc_part;
+
+	sd_part = emmc_part = env_get_ulong("mmcrootpart", 10, 0);
+
+	sprintf(sd_devpart_str, "1:%d", sd_part);
+	sprintf(emmc_devpart_str, "1:%d", emmc_part);
+
+	struct splash_location var_splash_locations[] = {
+		{
+			.name = "sd",
+			.storage = SPLASH_STORAGE_MMC,
+			.flags = SPLASH_STORAGE_FS,
+			.devpart = sd_devpart_str,
+		},
+		{
+			.name = "emmc",
+			.storage = SPLASH_STORAGE_MMC,
+			.flags = SPLASH_STORAGE_FS,
+			.devpart = emmc_devpart_str,
+		},
+		{
+			.name = "nand",
+			.storage = SPLASH_STORAGE_NAND,
+			.flags = SPLASH_STORAGE_FS,
+			.mtdpart = "rootfs",
+			.ubivol = "ubi0:rootfs",
+		},
+	};
+
+	set_splashsource_to_boot_rootfs();
+
+	ret = splash_source_load(var_splash_locations,
+			ARRAY_SIZE(var_splash_locations));
+
+	/* Turn on backlight */
+	if (lvds_enabled)
+		gpio_set_value(VAR_SOM_BACKLIGHT_EN, 1);
+
+	return ret;
+}
+#endif /* ifdef CONFIG_SPLASH_SOURCE */
+#endif /* ifdef CONFIG_SPLASH_SCREEN */
+
 #if defined(CONFIG_VIDEO_IPUV3)
 static void disable_lvds(struct display_info_t const *dev)
 {
@@ -427,12 +548,19 @@ static int detect_mx6cb_cdisplay(struct display_info_t const *dev)
 {
 	if (!is_mx6_custom_board())
 		return 0;
+
+	i2c_set_bus_num(dev->bus);
+	return (0 == i2c_probe(dev->addr));
 }
 
 static int detect_mx6cb_rdisplay(struct display_info_t const *dev)
 {
 	if (!is_mx6_custom_board())
 		return 0;
+
+	/* i2c probe the *c*display */
+	i2c_set_bus_num(MX6CB_CDISPLAY_I2C_BUS);
+	return (0 != i2c_probe(MX6CB_CDISPLAY_I2C_ADDR));
 }
 
 #define MHZ2PS(f)	(1000000/(f))
