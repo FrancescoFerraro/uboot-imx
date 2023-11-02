@@ -15,8 +15,6 @@
 #include <i2c.h>
 #include "mx6var_eeprom_v1.h"
 
-#include <asm/io.h>
-#include <cpu_func.h>
 static void var_eeprom_v1_print_production_info(const struct var_eeprom_v1_cfg *p_var_eeprom_v1_cfg)
 {
 	printf("\nPart number: %.*s\n",

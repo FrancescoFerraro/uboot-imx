@@ -17,6 +17,7 @@
  */
 
 #ifdef CONFIG_SPL_BUILD
+#include "linux/delay.h"
 #include <asm/io.h>
 #include <common.h>
 #include <i2c.h>

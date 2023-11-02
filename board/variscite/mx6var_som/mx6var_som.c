@@ -79,7 +79,7 @@ DECLARE_GLOBAL_DATA_PTR;
 bool lvds_enabled=false;
 
 /*
- * Returns true iff the SOM is VAR-SOM-SOLO
+ * Returns true if the SOM is VAR-SOM-SOLO
  */
 static bool is_som_solo(void)
 {
@@ -95,7 +95,7 @@ static bool is_som_solo(void)
 }
 
 /*
- * Returns true iff the carrier board is VAR-SOLOCustomBoard
+ * Returns true if the carrier board is VAR-SOLOCustomBoard
  */
 static bool is_solo_custom_board(void)
 {
@@ -236,52 +236,38 @@ static int env_check(char *var, char *val)
 #endif
 
 #ifdef CONFIG_SYS_I2C_LEGACY
-static struct i2c_pads_info mx6dl_i2c_pad_info1 = {
-	.scl = {
-		.i2c_mode = MX6DL_PAD_CSI0_DAT9__I2C1_SCL | I2C_PAD,
-		.gpio_mode = MX6DL_PAD_CSI0_DAT9__GPIO5_IO27 | I2C_PAD,
-		.gp = IMX_GPIO_NR(5, 27)
-	},
-	.sda = {
-		.i2c_mode = MX6DL_PAD_CSI0_DAT8__I2C1_SDA | I2C_PAD,
-		.gpio_mode = MX6DL_PAD_CSI0_DAT8__GPIO5_IO26 | I2C_PAD,
-		.gp = IMX_GPIO_NR(5, 26)
-	}
-};
+#ifdef CONFIG_SYS_I2C_MXC
+I2C_PADS(i2c_pad_info1,
+	PAD_CSI0_DAT9__I2C1_SCL | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	PAD_CSI0_DAT9__GPIO5_IO27 | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	IMX_GPIO_NR(5, 27),
+	PAD_CSI0_DAT8__I2C1_SDA | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	PAD_CSI0_DAT8__GPIO5_IO26 | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	IMX_GPIO_NR(5, 26));
 
-static struct i2c_pads_info mx6dl_i2c_pad_info2 = {
-	.scl = {
-		.i2c_mode = MX6DL_PAD_KEY_COL3__I2C2_SCL | I2C_PAD,
-		.gpio_mode = MX6DL_PAD_KEY_COL3__GPIO4_IO12 | I2C_PAD,
-		.gp = IMX_GPIO_NR(4, 12)
-	},
-	.sda = {
-		.i2c_mode = MX6DL_PAD_KEY_ROW3__I2C2_SDA | I2C_PAD,
-		.gpio_mode = MX6DL_PAD_KEY_ROW3__GPIO4_IO13 | I2C_PAD,
-		.gp = IMX_GPIO_NR(4, 13)
-	}
-};
+I2C_PADS(i2c_pad_info2,
+	PAD_KEY_COL3__I2C2_SCL | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	PAD_KEY_COL3__GPIO4_IO12 | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	IMX_GPIO_NR(4, 12),
+	PAD_KEY_ROW3__I2C2_SDA | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	PAD_KEY_ROW3__GPIO4_IO13 | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	IMX_GPIO_NR(4, 13));
 
-static struct i2c_pads_info mx6dl_i2c_pad_info3 = {
-	.scl = {
-		.i2c_mode = MX6DL_PAD_GPIO_5__I2C3_SCL | I2C_PAD,
-		.gpio_mode = MX6DL_PAD_GPIO_5__GPIO1_IO05 | I2C_PAD,
-		.gp = IMX_GPIO_NR(1, 5)
-	},
-	.sda = {
-		.i2c_mode = MX6DL_PAD_GPIO_16__I2C3_SDA | I2C_PAD,
-		.gpio_mode = MX6DL_PAD_GPIO_16__GPIO7_IO11 | I2C_PAD,
-		.gp = IMX_GPIO_NR(7, 11)
-	}
-};
+I2C_PADS(i2c_pad_info3,
+	PAD_GPIO_5__I2C3_SCL | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	PAD_GPIO_5__GPIO1_IO05 | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	IMX_GPIO_NR(1, 5),
+	PAD_GPIO_16__I2C3_SDA | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	PAD_GPIO_16__GPIO7_IO11 | MUX_PAD_CTRL(I2C_PAD_CTRL),
+	IMX_GPIO_NR(7, 11));
 
 static void setup_local_i2c(void)
 {
-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &mx6dl_i2c_pad_info1);
-	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &mx6dl_i2c_pad_info2);
-	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &mx6dl_i2c_pad_info3);
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, I2C_PADS_INFO(i2c_pad_info1));
+	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, I2C_PADS_INFO(i2c_pad_info2));
+	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, I2C_PADS_INFO(i2c_pad_info3));
 }
-
+#endif
 #endif
 
 static void setup_iomux_uart(void)
@@ -1037,17 +1023,19 @@ void board_init_f(ulong dummy)
 #ifdef CONFIG_SPL_LOAD_FIT
 int board_fit_config_name_match(const char *name)
 {
-	if (is_mx6dq()) {
-		if (!strcmp(name, "imx6q-sabresd"))
-			return 0;
-	} else if (is_mx6dqp()) {
-		if (!strcmp(name, "imx6qp-sabresd"))
-			return 0;
-	} else if (is_mx6dl()) {
-		if (!strcmp(name, "imx6dl-sabresd"))
-			return 0;
-	}
+	int idx = get_board_indx();
 
-	return -1;
+	if ((idx == DART_BOARD) && !strcmp(name, "imx6q-var-dart"))
+		return 0;
+	else if ((idx == SYMPHONY_BOARD) && !strcmp(name, "imx6dl-var-som-solo-symphony"))
+		return 0;
+#if 0
+	else if ((idx == SOLO_CUSTOM_BOARD) && !strcmp(name, ""))
+		return 0;
+	else if ((idx == MX6_CUSTOM_BOARD) && !strcmp(name, ""))
+		return 0;
+#endif
+	else
+		return -1;
 }
 #endif
