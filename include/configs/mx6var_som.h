@@ -1,14 +1,15 @@
-/* SPDX-License-Identifier: GPL-2.0+ */
 /*
- * Copyright (C) 2012 Freescale Semiconductor, Inc.
- * Copyright 2017-2018 NXP
- * Copyright 2023 Variscite Ltd.
+ * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
+ * Copyright (C) 2016-2019 Variscite Ltd.
  *
- * Configuration settings for the Freescale i.MX6Q SabreSD board.
+ * Author: Eran Matityahu <eran.m@variscite.com>
+ *
+ * Configuration settings for Variscite VAR-SOM-MX6 board family.
+ *
+ * SPDX-License-Identifier: GPL-2.0+
  */
-
-#ifndef __MX6SABRESD_CONFIG_H
-#define __MX6SABRESD_CONFIG_H
+#ifndef __MX6VAR_SOM_CONFIG_H
+#define __MX6VAR_SOM_CONFIG_H
 
 #ifdef CONFIG_SPL
 #include "imx6_spl.h"
@@ -19,350 +20,272 @@
 #define CONFIG_SPL_MAX_SIZE	0xFFFC  /* ==0x10000-0x4 */
 #define RAM_SIZE_ADDR	((CONFIG_SPL_TEXT_BASE) + (CONFIG_SPL_MAX_SIZE))
 
-#define CONFIG_MXC_UART_BASE	UART1_BASE
-#define CONSOLE_DEV		"ttymxc0"
-#define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* SDHC3 */
-
-#if defined(CONFIG_MX6Q) || defined(CONFIG_MX6QP)
-#define PHYS_SDRAM_SIZE		(1u * 1024 * 1024 * 1024)
-#elif defined(CONFIG_MX6DL)
-#define PHYS_SDRAM_SIZE		(1u * 1024 * 1024 * 1024)
-#elif defined(CONFIG_MX6S)
-#define PHYS_SDRAM_SIZE		(512u * 1024 * 1024)
-#endif
-
-//#include "mx6sabre_common.h"
-//===============================================================================================================================
-#include <linux/stringify.h>
 #include "mx6_common.h"
-#include "imx_env.h"
 
-/* MMC Configs */
-#define CONFIG_SYS_FSL_ESDHC_ADDR      0
+#define CONFIG_MXC_UART_BASE		UART1_BASE
+#define CONSOLE_DEV			"ttymxc0"
 
-#define CONFIG_FEC_XCV_TYPE		RGMII
-#define CONFIG_ETHPRIME			"eth0"
-
-#ifdef CONFIG_MX6S
-#define SYS_NOSMP "nosmp"
-#else
-#define SYS_NOSMP
-#endif
-
-#ifdef CONFIG_NAND_BOOT
-#define MFG_NAND_PARTITION "mtdparts=8000000.nor:1m(boot),-(rootfs)\\;gpmi-nand:64m(nandboot),16m(nandkernel),16m(nanddtb),16m(nandtee),-(nandrootfs)"
-#else
-#define MFG_NAND_PARTITION ""
-#endif
+#define LOW_POWER_MODE_ENABLE
 
 #define CONFIG_CMD_READ
 #define CONFIG_SERIAL_TAG
 #define CONFIG_FASTBOOT_USB_DEV 0
 
-#define CONFIG_MFG_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
-	"initrd_addr=0x12C00000\0" \
-	"initrd_high=0xffffffff\0" \
-	"emmc_dev=3\0"\
-	"sd_dev=2\0" \
-	"weim_uboot=0x08001000\0"\
-	"weim_base=0x08000000\0"\
-	"spi_bus=0\0"\
-	"spi_uboot=0x400\0" \
-	"mtdparts=" MFG_NAND_PARTITION \
-	"\0"\
+/* Falcon Mode */
+#ifdef CONFIG_SPL_OS_BOOT
+#define CONFIG_SPL_FS_LOAD_ARGS_NAME	"args"
+#define CONFIG_SPL_FS_LOAD_KERNEL_NAME	"uImage"
+#define CONFIG_SYS_SPL_ARGS_ADDR	0x18000000
+#define CONFIG_CMD_SPL_WRITE_SIZE	(128 * SZ_1K)
 
-#ifdef CONFIG_SUPPORT_EMMC_BOOT
-#define EMMC_ENV \
-	"emmcdev=2\0" \
-	"update_emmc_firmware=" \
-		"if test ${ip_dyn} = yes; then " \
-			"setenv get_cmd dhcp; " \
-		"else " \
-			"setenv get_cmd tftp; " \
-		"fi; " \
-		"if ${get_cmd} ${update_sd_firmware_filename}; then " \
-			"if mmc dev ${emmcdev} 1; then "	\
-				"setexpr fw_sz ${filesize} / 0x200; " \
-				"setexpr fw_sz ${fw_sz} + 1; "	\
-				"mmc write ${loadaddr} 0x2 ${fw_sz}; " \
-			"fi; "	\
-		"fi\0"
-#else
-#define EMMC_ENV ""
+/* Falcon Mode - MMC support: args@11MB kernel@4MB */
+#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTOR	0x5800	/* 11MB */
+#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTORS	(CONFIG_CMD_SPL_WRITE_SIZE / 512)
+#define CONFIG_SYS_MMCSD_RAW_MODE_KERNEL_SECTOR	0x2000	/* 4MB */
+
+#ifdef CONFIG_NAND_BOOT
+/* Falcon Mode - NAND support: args@11MB kernel@4MB */
+#define CONFIG_SYS_NAND_SPL_KERNEL_OFFS	(4 * SZ_1M)
+#define CONFIG_CMD_SPL_NAND_OFS		(11 * SZ_1M)
+#endif
 #endif
 
-#if defined(CONFIG_NAND_BOOT)
-	/*
-	 * The dts also enables the WEIN NOR which is mtd0.
-	 * So the partions' layout for NAND is:
-	 *     mtd1: 16M      (uboot)
-	 *     mtd2: 16M      (kernel)
-	 *     mtd3: 16M      (dtb)
-	 *     mtd4: left     (rootfs)
-	 */
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS \
-	TEE_ENV \
-	"fdt_addr=0x18000000\0" \
-	"tee_addr=0x20000000\0" \
-	"fdt_high=0xffffffff\0"	  \
-	"splashimage=0x28000000\0" \
-	"console=" CONSOLE_DEV "\0" \
-	"bootargs=console=" CONSOLE_DEV ",115200 ubi.mtd=nandrootfs "  \
-		"root=ubi0:nandrootfs rootfstype=ubifs "		     \
-		MFG_NAND_PARTITION \
-		"\0" \
-	"bootcmd=nand read ${loadaddr} 0x4000000 0xc00000;"\
-		"nand read ${fdt_addr} 0x5000000 0x100000;"\
-		"if test ${tee} = yes; then " \
-			"nand read ${tee_addr} 0x4000000 0x400000;"\
-			"bootm ${tee_addr} - ${fdt_addr};" \
-		"else " \
-			"bootz ${loadaddr} - ${fdt_addr};" \
-		"fi\0"
+/* MMC Configs */
+#define CONFIG_SYS_FSL_ESDHC_ADDR      0
 
-#elif defined(CONFIG_SATA_BOOT)
+/* Ethernet Configs */
+#define CONFIG_FEC_XCV_TYPE		RGMII
+#define CONFIG_ETHPRIME			"eth0"
 
-#define CONFIG_EXTRA_ENV_SETTINGS \
-		CONFIG_MFG_ENV_SETTINGS \
-		TEE_ENV \
-		"image=zImage\0" \
-		"fdt_file=undefined\0" \
-		"fdt_addr=0x18000000\0" \
-		"fdt_high=0xffffffff\0"   \
-		"splashimage=0x28000000\0" \
-		"tee_addr=0x20000000\0" \
-		"tee_file=undefined\0" \
-		"findfdt="\
-			"if test $fdt_file = undefined; then " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6QP; then " \
-					"setenv fdt_file imx6qp-sabreauto.dtb; fi; " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6Q; then " \
-					"setenv fdt_file imx6q-sabreauto.dtb; fi; " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6DL; then " \
-					"setenv fdt_file imx6dl-sabreauto.dtb; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6QP; then " \
-					"setenv fdt_file imx6qp-sabresd.dtb; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6Q; then " \
-					"setenv fdt_file imx6q-sabresd.dtb; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6DL; then " \
-					"setenv fdt_file imx6dl-sabresd.dtb; fi; " \
-				"if test $fdt_file = undefined; then " \
-					"echo WARNING: Could not determine dtb to use; " \
-				"fi; " \
-			"fi;\0" \
-		"findtee="\
-			"if test $tee_file = undefined; then " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6QP; then " \
-					"setenv tee_file uTee-6qpauto; fi; " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6Q; then " \
-					"setenv tee_file uTee-6qauto; fi; " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6DL; then " \
-					"setenv tee_file uTee-6dlauto; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6QP; then " \
-					"setenv tee_file uTee-6qpsdb; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6Q; then " \
-					"setenv tee_file uTee-6qsdb; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6DL; then " \
-					"setenv tee_file uTee-6dlsdb; fi; " \
-				"if test $tee_file = undefined; then " \
-					"echo WARNING: Could not determine tee to use; fi; " \
-			"fi;\0" \
-		"bootargs=console=" CONSOLE_DEV ",115200 \0"\
-		"bootargs_sata=setenv bootargs ${bootargs} " \
-			"root=/dev/sda2 rootwait rw \0" \
-		"bootcmd_sata=run bootargs_sata; scsi scan; " \
-			"run findfdt; run findtee;" \
-			"fatload scsi 0:1 ${loadaddr} ${image}; " \
-			"fatload scsi 0:1 ${fdt_addr} ${fdt_file}; " \
-			"if test ${tee} = yes; then " \
-				"fatload scsi 0:1 ${tee_addr} ${tee_file}; " \
-				"bootm ${tee_addr} - ${fdt_addr}; " \
-			"else " \
-				"bootz ${loadaddr} - ${fdt_addr}; " \
-			"fi \0"\
-		"bootcmd=run bootcmd_sata \0"
-
+#ifdef CONFIG_NAND_BOOT
+#define MMC_ROOT_PART	1
 #else
+#define MMC_ROOT_PART	2
+#endif
 
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS \
-	TEE_ENV \
-	"epdc_waveform=epdc_splash.bin\0" \
+#define MMC_BOOT_ENV_SETTINGS \
+	"bootenv=uEnv.txt\0" \
 	"script=boot.scr\0" \
-	"image=zImage\0" \
-	"fdt_file=undefined\0" \
-	"fdt_addr=0x18000000\0" \
-	"tee_addr=0x20000000\0" \
-	"tee_file=undefined\0" \
+	"uimage=uImage\0" \
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \
-	"console=" CONSOLE_DEV "\0" \
-	"dfuspi=dfu 0 sf 0:0:10000000:0\0" \
-	"dfu_alt_info_spl=spl raw 0x400\0" \
-	"dfu_alt_info_img=u-boot raw 0x10000\0" \
-	"dfu_alt_info=spl raw 0x400\0" \
-	"fdt_high=0xffffffff\0"	  \
-	"initrd_high=0xffffffff\0" \
-	"splashimage=0x28000000\0" \
 	"mmcdev=" __stringify(CONFIG_SYS_MMC_ENV_DEV) "\0" \
-	"mmcpart=1\0" \
-	"finduuid=part uuid mmc ${mmcdev}:2 uuid\0" \
-	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
+	"mmcblk=1\0" \
 	"mmcautodetect=yes\0" \
-	"update_sd_firmware=" \
-		"if test ${ip_dyn} = yes; then " \
-			"setenv get_cmd dhcp; " \
-		"else " \
-			"setenv get_cmd tftp; " \
-		"fi; " \
-		"if mmc dev ${mmcdev}; then "	\
-			"if ${get_cmd} ${update_sd_firmware_filename}; then " \
-				"setexpr fw_sz ${filesize} / 0x200; " \
-				"setexpr fw_sz ${fw_sz} + 1; "	\
-				"mmc write ${loadaddr} 0x2 ${fw_sz}; " \
-			"fi; "	\
-		"fi\0" \
-	EMMC_ENV	  \
-	"smp=" SYS_NOSMP "\0"\
-	"mmcargs=setenv bootargs console=${console},${baudrate} ${smp} " \
-		"root=${mmcroot}\0" \
+	"mmcbootpart=1\0" \
+	"mmcrootpart=" __stringify(MMC_ROOT_PART) "\0" \
+	"mmcargs=setenv bootargs console=${console},${baudrate} " \
+		"root=/dev/mmcblk${mmcblk}p${mmcrootpart} rootwait rw\0" \
+	"loadbootenv=" \
+		"load mmc ${mmcdev}:${mmcbootpart} ${loadaddr} ${bootdir}/${bootenv};\0" \
+	"importbootenv=echo Importing bootenv from mmc ...; " \
+		"env import -t ${loadaddr} ${filesize}\0" \
 	"loadbootscript=" \
-		"load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script} || " \
-		"load mmc ${mmcdev}:${mmcpart} ${loadaddr} boot/${script};\0" \
+		"load mmc ${mmcdev}:${mmcbootpart} ${loadaddr} ${bootdir}/${script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
-	"loadimage=load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image} || " \
-		"load mmc ${mmcdev}:${mmcpart} ${loadaddr} boot/${image}\0" \
-	"loadfdt=load mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file} || " \
-		"load mmc ${mmcdev}:${mmcpart} ${fdt_addr} boot/${fdt_file}\0" \
-	"loadtee=load mmc ${mmcdev}:${mmcpart} ${tee_addr} ${tee_file} || " \
-		"load mmc ${mmcdev}:${mmcpart} ${tee_addr} boot/${tee_file}\0" \
+	"loaduimage=load mmc ${mmcdev}:${mmcbootpart} ${loadaddr} ${bootdir}/${uimage}\0" \
+	"loadfdt=run findfdt; " \
+		"echo fdt_file=${fdt_file}; " \
+		"load mmc ${mmcdev}:${mmcbootpart} ${fdt_addr} ${bootdir}/${fdt_file}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
-		"if test ${tee} = yes; then " \
-			"run loadfdt; run loadtee; bootm ${tee_addr} - ${fdt_addr}; " \
-		"else " \
-			"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-				"if run loadfdt; then " \
-					"bootz ${loadaddr} - ${fdt_addr}; " \
-				"else " \
-					"if test ${boot_fdt} = try; then " \
-						"bootz; " \
-					"else " \
-						"echo WARN: Cannot load the DT; " \
-					"fi; " \
-				"fi; " \
+		"run videoargs; " \
+		"run optargs; " \
+		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
+			"if run loadfdt; then " \
+				"bootm ${loadaddr} - ${fdt_addr}; " \
 			"else " \
-				"bootz; " \
-			"fi;" \
+				"if test ${boot_fdt} = try; then " \
+					"bootm; " \
+				"else " \
+					"echo WARN: Cannot load the DT; " \
+				"fi; " \
+			"fi; " \
+		"else " \
+			"bootm; " \
+		"fi;\0"
+
+#ifdef CONFIG_NAND_BOOT
+#define NAND_BOOT_ENV_SETTINGS \
+	"nandargs=setenv bootargs console=${console},${baudrate} ubi.mtd=3 " \
+		"root=ubi0:rootfs rootfstype=ubifs\0" \
+	"rootfs_device=nand\0" \
+	"boot_device=nand\0" \
+	"nandboot=nand read ${loadaddr} 0x400000 0x800000; " \
+		"nand read ${fdt_addr} 0x3e0000 0x20000; " \
+		"bootm ${loadaddr} - ${fdt_addr};\0" \
+	"bootcmd=" \
+		"if test ${rootfs_device} != emmc; then " \
+			"run nandargs; " \
+			"run videoargs; " \
+			"run optargs; " \
+			"echo booting from nand ...; " \
+			"run nandboot; " \
+		"else " \
+			"if test ${boot_device} != emmc; then " \
+				"run mmcargs; " \
+				"run videoargs; " \
+				"run optargs; " \
+				"echo booting from nand (rootfs on emmc)...; " \
+				"run nandboot; " \
+			"else " \
+				"setenv mmcdev 1; " \
+				CONFIG_BOOTCOMMAND \
+			"fi; " \
 		"fi;\0" \
-	"netargs=setenv bootargs console=${console},${baudrate} ${smp} " \
-		"root=/dev/nfs " \
-		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
+	"mtdids=" MTDIDS_DEFAULT "\0" \
+	"mtdparts=" MTDPARTS_DEFAULT "\0"
+#else
+#define NAND_BOOT_ENV_SETTINGS ""
+#endif
+
+#define OPT_ENV_SETTINGS \
+	"optargs=setenv bootargs ${bootargs} ${kernelargs};\0"
+
+#define VIDEO_ENV_SETTINGS \
+	"videoargs=" \
+		"if hdmidet; then " \
+			"setenv bootargs ${bootargs} " \
+				"video=mxcfb0:dev=hdmi,1920x1080M@60,if=RGB24; " \
+		"else " \
+			"setenv bootargs ${bootargs} " \
+				"video=mxcfb0:dev=ldb; " \
+		"fi; " \
+		"setenv bootargs ${bootargs} " \
+			"video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off;\0"
+
+
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	MMC_BOOT_ENV_SETTINGS \
+	NAND_BOOT_ENV_SETTINGS \
+	VIDEO_ENV_SETTINGS \
+	OPT_ENV_SETTINGS \
+	"fdt_file=undefined\0" \
+	"fdt_addr=0x18000000\0" \
+	"fdt_high=0xffffffff\0" \
+	"splashsourceauto=yes\0" \
+	"splashfile=/boot/splash.bmp\0" \
+	"splashimage=0x18100000\0" \
+	"splashenable=setenv splashfile /boot/splash.bmp; " \
+		"setenv splashimage 0x18100000\0" \
+	"splashdisable=setenv splashfile; setenv splashimage\0" \
+	"console=" CONSOLE_DEV "\0" \
+	"netargs=setenv bootargs console=${console},${baudrate} " \
+		"root=/dev/nfs rw " \
+		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp; " \
+		"run videoargs\0" \
 	"netboot=echo Booting from net ...; " \
 		"run netargs; " \
+		"run optargs; " \
 		"if test ${ip_dyn} = yes; then " \
 			"setenv get_cmd dhcp; " \
 		"else " \
 			"setenv get_cmd tftp; " \
 		"fi; " \
-		"${get_cmd} ${image}; " \
-		"if test ${tee} = yes; then " \
-			"${get_cmd} ${tee_addr} ${tee_file}; " \
-			"${get_cmd} ${fdt_addr} ${fdt_file}; " \
-			"bootm ${tee_addr} - ${fdt_addr}; " \
-		"else " \
-			"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-				"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-					"bootz ${loadaddr} - ${fdt_addr}; " \
-				"else " \
-					"if test ${boot_fdt} = try; then " \
-						"bootz; " \
-					"else " \
-						"echo WARN: Cannot load the DT; " \
-					"fi; " \
-				"fi; " \
+		"${get_cmd} ${uimage}; " \
+		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
+			"run findfdt; " \
+			"echo fdt_file=${fdt_file}; " \
+			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
+				"bootm ${loadaddr} - ${fdt_addr}; " \
 			"else " \
-				"bootz; " \
+				"if test ${boot_fdt} = try; then " \
+					"bootm; " \
+				"else " \
+					"echo WARN: Cannot load the DT; " \
+				"fi; " \
 			"fi; " \
+		"else " \
+			"bootm; " \
 		"fi;\0" \
-		"findfdt="\
+	"findfdt="\
+		"if test $fdt_file = undefined; then " \
+			"if test $board_name = DT6CUSTOM && test $board_rev = MX6Q; then " \
+				"setenv fdt_file imx6q-var-dart.dtb; " \
+			"fi; " \
+			"if test $board_name = SOLOCUSTOM && test $board_rev = MX6QP; then " \
+				"setenv fdt_file imx6qp-var-som-vsc.dtb; " \
+			"fi; " \
+			"if test $board_name = SOLOCUSTOM && test $board_rev = MX6Q; then " \
+				"setenv fdt_file imx6q-var-som-vsc.dtb; " \
+			"fi; " \
+			"if test $board_name = SOLOCUSTOM && test $board_rev = MX6DL && test $board_som = SOM-SOLO; then " \
+				"setenv fdt_file imx6dl-var-som-solo-vsc.dtb; " \
+			"fi; " \
+			"if test $board_name = SOLOCUSTOM && test $board_rev = MX6DL && test $board_som = SOM-MX6; then " \
+				"setenv fdt_file imx6dl-var-som-vsc.dtb; " \
+			"fi; " \
+			"if test $board_name = SYMPHONY && test $board_rev = MX6QP; then " \
+				"setenv fdt_file imx6qp-var-som-symphony.dtb; " \
+			"fi; " \
+			"if test $board_name = SYMPHONY && test $board_rev = MX6Q; then " \
+				"setenv fdt_file imx6q-var-som-symphony.dtb; " \
+			"fi; " \
+			"if test $board_name = SYMPHONY && test $board_rev = MX6DL && test $board_som = SOM-SOLO; then " \
+				"setenv fdt_file imx6dl-var-som-solo-symphony.dtb; " \
+			"fi; " \
+			"if test $board_name = SYMPHONY && test $board_rev = MX6DL && test $board_som = SOM-MX6; then " \
+				"setenv fdt_file imx6dl-var-som-symphony.dtb; " \
+			"fi; " \
+			"if test $board_name = MX6CUSTOM && test $board_rev = MX6QP; then " \
+				"i2c dev 2; " \
+				"if i2c probe 0x38; then " \
+					"setenv fdt_file imx6qp-var-som-cap.dtb; " \
+				"else " \
+					"setenv fdt_file imx6qp-var-som-res.dtb; " \
+				"fi; " \
+			"fi; " \
+			"if test $board_name = MX6CUSTOM && test $board_rev = MX6Q; then " \
+				"i2c dev 2; " \
+				"if i2c probe 0x38; then " \
+					"setenv fdt_file imx6q-var-som-cap.dtb; " \
+				"else " \
+					"setenv fdt_file imx6q-var-som-res.dtb; " \
+				"fi; " \
+			"fi; " \
+			"if test $board_name = MX6CUSTOM && test $board_rev = MX6DL && test $board_som = SOM-SOLO; then " \
+				"i2c dev 2; " \
+				"if i2c probe 0x38; then " \
+					"setenv fdt_file imx6dl-var-som-solo-cap.dtb; " \
+				"else " \
+					"setenv fdt_file imx6dl-var-som-solo-res.dtb; " \
+				"fi; " \
+			"fi; " \
+			"if test $board_name = MX6CUSTOM && test $board_rev = MX6DL && test $board_som = SOM-MX6; then " \
+				"i2c dev 2; " \
+				"if i2c probe 0x38; then " \
+					"setenv fdt_file imx6dl-var-som-cap.dtb; " \
+				"else " \
+					"setenv fdt_file imx6dl-var-som-res.dtb; " \
+				"fi; " \
+			"fi; " \
 			"if test $fdt_file = undefined; then " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6QP; then " \
-					"setenv fdt_file imx6qp-sabreauto.dtb; fi; " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6Q; then " \
-					"setenv fdt_file imx6q-sabreauto.dtb; fi; " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6DL; then " \
-					"setenv fdt_file imx6dl-sabreauto.dtb; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6QP; then " \
-					"setenv fdt_file imx6qp-sabresd.dtb; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6Q; then " \
-					"setenv fdt_file imx6q-sabresd.dtb; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6DL; then " \
-					"setenv fdt_file imx6dl-sabresd.dtb; fi; " \
-				"if test $fdt_file = undefined; then " \
-					"echo WARNING: Could not determine dtb to use; fi; " \
-			"fi;\0" \
-		"findtee="\
-			"if test $tee_file = undefined; then " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6QP; then " \
-					"setenv tee_file uTee-6qpauto; fi; " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6Q; then " \
-					"setenv tee_file uTee-6qauto; fi; " \
-				"if test $board_name = SABREAUTO && test $board_rev = MX6DL; then " \
-					"setenv tee_file uTee-6dlauto; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6QP; then " \
-					"setenv tee_file uTee-6qpsdb; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6Q; then " \
-					"setenv tee_file uTee-6qsdb; fi; " \
-				"if test $board_name = SABRESD && test $board_rev = MX6DL; then " \
-					"setenv tee_file uTee-6dlsdb; fi; " \
-				"if test $tee_file = undefined; then " \
-					"echo WARNING: Could not determine tee to use; fi; " \
-			"fi;\0" \
+				"echo WARNING: Could not determine dtb to use; " \
+			"fi; " \
+		"fi;\0"
 
-#endif
-
-#define CONFIG_ARP_TIMEOUT     200UL
+#define CONFIG_ARP_TIMEOUT		200UL
 
 /* Physical Memory Map */
-#define PHYS_SDRAM                     MMDC0_ARB_BASE_ADDR
+#define CONFIG_NR_DRAM_BANKS		1
+#define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
 
-#define CONFIG_SYS_SDRAM_BASE          PHYS_SDRAM
-#define CONFIG_SYS_INIT_RAM_ADDR       IRAM_BASE_ADDR
-#define CONFIG_SYS_INIT_RAM_SIZE       IRAM_SIZE
+#define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM
+#define CONFIG_SYS_INIT_RAM_ADDR	IRAM_BASE_ADDR
+#define CONFIG_SYS_INIT_RAM_SIZE	IRAM_SIZE
 
 #define CONFIG_SYS_INIT_SP_OFFSET \
 	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_SYS_INIT_SP_ADDR \
 	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 
-#ifdef CONFIG_MTD_NOR_FLASH
-#define CONFIG_SYS_FLASH_BASE           WEIM_ARB_BASE_ADDR
-#define CONFIG_SYS_FLASH_SECT_SIZE      (128 * 1024)
-#define CONFIG_SYS_MAX_FLASH_SECT 256   /* max number of sectors on one chip */
-#define CONFIG_SYS_FLASH_EMPTY_INFO
-#define CONFIG_SYS_FLASH_CFI_WIDTH	FLASH_CFI_16BIT
-#endif
-
-#ifdef CONFIG_NAND_MXS
-
-#define CONFIG_SYS_MAX_NAND_DEVICE     1
-#define CONFIG_SYS_NAND_BASE           0x40000000
-#define CONFIG_SYS_NAND_USE_FLASH_BBT
-
-/* DMA stuff, needed for GPMI/MXS NAND support */
-#endif
-
-#if defined(CONFIG_ENV_IS_IN_SATA)
-#define CONFIG_SYS_SATA_ENV_DEV		0
-#endif
-
+/* I2C Configs */
+#define PMIC_I2C_BUS		1
+#define MX6CB_CDISPLAY_I2C_BUS	2
+#define MX6CB_CDISPLAY_I2C_ADDR	0x38
 
 /* PMIC */
-#define PMIC_I2C_BUS	1
 #ifndef CONFIG_DM_PMIC
 #define CONFIG_POWER_PFUZE100
 #define CONFIG_POWER_PFUZE100_I2C_ADDR 0x08
@@ -372,68 +295,25 @@
 #define CONFIG_IMX_HDMI
 #define CONFIG_IMX_VIDEO_SKIP
 
-#if defined(CONFIG_ANDROID_SUPPORT)
-#include "mx6sabreandroid_common.h"
-#else
-#define CONFIG_USBD_HS
-
-#endif /* CONFIG_ANDROID_SUPPORT */
-//===============================================================================================================================
-
-/* Falcon Mode */
-#define CONFIG_SPL_FS_LOAD_ARGS_NAME	"args"
-#define CONFIG_SPL_FS_LOAD_KERNEL_NAME	"uImage"
-#define CONFIG_SYS_SPL_ARGS_ADDR       0x18000000
-
-/* Falcon Mode - MMC support: args@1MB kernel@2MB */
-#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTOR  0x800   /* 1MB */
-#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTORS (CONFIG_CMD_SPL_WRITE_SIZE / 512)
-
-#define CONFIG_SYS_FSL_USDHC_NUM	3
-
-/*
- * imx6 q/dl/solo pcie would be failed to work properly in kernel, if
- * the pcie module is iniialized/enumerated both in uboot and linux
- * kernel.
- * rootcause:imx6 q/dl/solo pcie don't have the reset mechanism.
- * it is only be RESET by the POR. So, the pcie module only be
- * initialized/enumerated once in one POR.
- * Set to use pcie in kernel defaultly, mask the pcie config here.
- * Remove the mask freely, if the uboot pcie functions, rather than
- * the kernel's, are required.
- */
-#ifdef CONFIG_CMD_PCI
-#define CONFIG_PCI_SCAN_SHOW
-#define CONFIG_PCIE_IMX
-#endif
-
 /* USB Configs */
 #ifdef CONFIG_CMD_USB
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_MXC_USB_PORTSC		(PORT_PTS_UTMI | PORT_PTS_PTW)
 #define CONFIG_MXC_USB_FLAGS		0
-#define CONFIG_USB_MAX_CONTROLLER_COUNT	1 /* Enabled USB controller number */
+#define CONFIG_USB_MAX_CONTROLLER_COUNT	2 /* Enabled USB controller number */
+
+#define CONFIG_USBD_HS
+
+/* Uncomment for USB Ethernet Gadget support */
+/*
+ * #define CONFIG_USB_ETHER
+ * #define CONFIG_USB_ETH_CDC
+ */
+
+#endif /* CONFIG_CMD_USB */
+
+#if defined(CONFIG_ANDROID_SUPPORT)
+#include "mx6var_som_android.h"
 #endif
 
-/*#define CONFIG_SPLASH_SCREEN*/
-/*#define CONFIG_MXC_EPDC*/
-
-/*
- * SPLASH SCREEN Configs
- */
-#if defined(CONFIG_MXC_EPDC)
-	/*
-	 * Framebuffer and LCD
-	 */
-	#undef LCD_TEST_PATTERN
-	/* #define CONFIG_SPLASH_IS_IN_MMC			1 */
-	#define LCD_BPP					LCD_MONOCHROME
-	/* #define CONFIG_SPLASH_SCREEN_ALIGN		1 */
-
-	#define CONFIG_WAVEFORM_BUF_SIZE		0x400000
-#endif /* CONFIG_SPLASH_SCREEN && CONFIG_MXC_EPDC */
-
-#define MX6CB_CDISPLAY_I2C_BUS	2
-#define MX6CB_CDISPLAY_I2C_ADDR	0x38
-
-#endif                         /* __MX6SABRESD_CONFIG_H */
+#endif	/* __MX6VAR_SOM_CONFIG_H */
