@@ -366,12 +366,9 @@
 	disable-over-current;
 	/* dr_mode: One of "host", "peripheral" or "otg". Defaults to "otg" */
 	dr_mode = "host";
-	srp-disable;
-	hnp-disable;
-	adp-disable;
+	hnp-srp-disable;
 	status = "okay";
 };
-
 
 &usdhc3 {	/* uSDHC3, eMMC */
 	pinctrl-names = "default";

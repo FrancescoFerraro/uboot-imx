@@ -695,82 +695,6 @@ static void setup_display(void)
 }
 #endif /* CONFIG_VIDEO_IPUV3 */
 
-#ifdef CONFIG_USB_EHCI_MX6
-#ifndef CONFIG_DM_USB
-static int const usb_otg_pwr_en_gpio[] = {
-	/* DART */
-	IMX_GPIO_NR(4, 15),
-	/* SOLOCustomBoard */
-	IMX_GPIO_NR(3, 22),
-};
-
-static int const usb_h1_pwr_en_gpio[] = {
-	/* DART */
-	IMX_GPIO_NR(1, 28),
-	/* SOLOCustomBoard */
-	IMX_GPIO_NR(4, 15),
-};
-
-static iomux_v3_cfg_t const usb_pads[][3*2] = {
-	{
-		/* DART */
-		IOMUX_PADS(PAD_ENET_RX_ER__USB_OTG_ID	| MUX_PAD_CTRL(OTG_ID_PAD_CTRL)),
-		IOMUX_PADS(PAD_KEY_ROW4__GPIO4_IO15	| MUX_PAD_CTRL(NO_PAD_CTRL)),
-		IOMUX_PADS(PAD_ENET_TX_EN__GPIO1_IO28	| MUX_PAD_CTRL(NO_PAD_CTRL)),
-	},
-	{
-		/* SOLOCustomBoard */
-		IOMUX_PADS(PAD_GPIO_1__USB_OTG_ID	| MUX_PAD_CTRL(OTG_ID_PAD_CTRL)),
-		IOMUX_PADS(PAD_EIM_D22__GPIO3_IO22	| MUX_PAD_CTRL(NO_PAD_CTRL)),
-		IOMUX_PADS(PAD_KEY_ROW4__GPIO4_IO15	| MUX_PAD_CTRL(NO_PAD_CTRL)),
-	}
-};
-
-static void setup_usb(void)
-{
-	int board = get_board_indx();
-	if ((board == SYMPHONY_BOARD) || (board == MX6_CUSTOM_BOARD))
-		return;
-
-	SETUP_IOMUX_PADS(usb_pads[board]);
-	gpio_request(usb_otg_pwr_en_gpio[board], "USB OTG Power Enable");
-	gpio_request(usb_h1_pwr_en_gpio[board], "USB H1 Power Enable");
-	gpio_direction_output(usb_otg_pwr_en_gpio[board], 0);
-	gpio_direction_output(usb_h1_pwr_en_gpio[board], 0);
-}
-
-int board_usb_phy_mode(int port)
-{
-	if ((is_symphony_board() || is_mx6_custom_board()) && port == 0) {
-#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_ENV_SUPPORT)
-		if (env_check("usbmode", "host"))
-			return USB_INIT_HOST;
-		else
-#endif
-			return USB_INIT_DEVICE;
-	}
-	return usb_phy_mode(port);
-}
-
-int board_ehci_power(int port, int on)
-{
-	int board = get_board_indx();
-	if ((board == SYMPHONY_BOARD) || (board == MX6_CUSTOM_BOARD))
-		return 0; /* no power enable needed */
-
-	if (port > 1)
-		return -EINVAL;
-
-	if (port)
-		gpio_set_value(usb_h1_pwr_en_gpio[board], on);
-	else
-		gpio_set_value(usb_otg_pwr_en_gpio[board], on);
-
-	return 0;
-}
-#endif
-#endif /* CONFIG_USB_EHCI_MX6 */
-
 /*
  * Do not overwrite the console
  * Use always serial for U-Boot console
@@ -799,19 +723,6 @@ int board_init(void)
 	setup_display();
 #elif defined(CONFIG_IMX_HDMI)
 	setup_hdmi();
-#endif
-
-#ifdef CONFIG_USB_EHCI_MX6
-#ifndef CONFIG_DM_USB
-	setup_usb();
-#endif
-	int board = get_board_indx();
-
-	/* 'usb_otg_id' pin iomux select control */
-	if (board == DART_BOARD)
-		imx_iomux_set_gpr_register(1, 13, 1, 0);
-	else if (board == SOLO_CUSTOM_BOARD)
-		imx_iomux_set_gpr_register(1, 13, 1, 1);
 #endif
 	return 0;
 }

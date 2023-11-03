@@ -435,19 +435,9 @@
 	vbus-supply = <&reg_usb_otg_vbus>;
 	disable-over-current;
 	/* dr_mode: One of "host", "peripheral" or "otg". Defaults to "otg" */
-	dr_mode = "host";
-	srp-disable;
-	hnp-disable;
-	adp-disable;
+	dr_mode = "peripheral";
+	hnp-srp-disable;
 	status = "okay";
-};
-
-&usbphy1 {
-	tx-d-cal = <0x5>;
-};
-
-&usbphy2 {
-	tx-d-cal = <0x5>;
 };
 
 &usdhc1 {	/* uSDHC1, eMMC */
