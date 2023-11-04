@@ -117,14 +117,13 @@
 				 <&clks IMX6QDL_CLK_PLL2_PFD0_352M>;
 };
 
-
-#if 0
 &fec {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet_4>;
 	phy-mode = "rgmii-id";
 	phy-handle = <&ethphy>;
-	phy-reset-on-resume;
+	phy-reset-duration = <10>;
+	phy-reset-gpios = <&gpio1 25 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
 	mdio {
@@ -133,23 +132,12 @@
 
 		ethphy: ethernet-phy@7 {
 			reg = <7>;
-			compatible = "ethernet-phy-ieee802.3-c22";
 			assigned-clocks = <&clks IMX6QDL_CLK_ENET_REF>;
 			assigned-clock-rates = <125000000>;
-			reset-gpios = <&gpio1 25 GPIO_ACTIVE_LOW>;
-			reset-assert-us = <100000>;
 		};
 	};
 };
-#else
-&fec {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_enet_4>;
-	phy-mode = "rgmii-id";
-	phy-reset-gpios = <&gpio1 25 GPIO_ACTIVE_LOW>;
-	status = "okay";
-};
-#endif
+
 &gpc {
 	/* use ldo-bypass, u-boot will check it and configure */
 	fsl,ldo-bypass = <1>;
