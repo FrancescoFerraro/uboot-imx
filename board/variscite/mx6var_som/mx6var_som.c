@@ -1009,14 +1009,11 @@ static void print_emmc_size(void)
 	puts("eMMC:  ");
 	print_size(mmc->capacity, "\n");
 }
-#endif
 
 int board_late_init(void)
 {
-#ifndef CONFIG_SPL_BUILD
 #ifdef CONFIG_ENV_IS_IN_MMC
 	print_emmc_size();
-#endif
 #endif
 
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
@@ -1043,10 +1040,19 @@ int board_late_init(void)
 	else if (is_mx6sdl())
 		env_set("board_rev", "MX6DL");
 #endif
+	return 0;
+}
 
-#ifdef CONFIG_EXTCON_PTN5150
-	extcon_ptn5150_setup(&usb_ptn5150);
-#endif
+int checkboard(void)
+{
+	puts("Board: Variscite ");
+
+	if (is_som_solo())
+		puts("VAR-SOM-SOLO\n");
+	else if (is_dart_board())
+		puts("DART-MX6\n");
+	else
+		puts("VAR-SOM-MX6\n");
 
 	return 0;
 }
@@ -1054,45 +1060,45 @@ int board_late_init(void)
 #ifdef CONFIG_FSL_FASTBOOT
 #ifdef CONFIG_ANDROID_RECOVERY
 
-#define GPIO_VOL_DN_KEY IMX_GPIO_NR(1, 5)
-iomux_v3_cfg_t const recovery_key_pads[] = {
-	IOMUX_PADS(PAD_GPIO_5__GPIO1_IO05 | MUX_PAD_CTRL(NO_PAD_CTRL)),
+static int back_key_gpio[] = {
+	/* DART */
+	IMX_GPIO_NR(4, 26),
+	/* Non-DART */
+	IMX_GPIO_NR(5, 20)
+};
+
+static iomux_v3_cfg_t const back_key_pad[][1*2] = {
+	{
+		/* DART */
+		IOMUX_PADS(PAD_DISP0_DAT5__GPIO4_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL)),
+	},
+	{
+		/* Non-DART */
+		IOMUX_PADS(PAD_CSI0_DATA_EN__GPIO5_IO20 | MUX_PAD_CTRL(NO_PAD_CTRL)),
+	}
 };
 
 int is_recovery_key_pressing(void)
 {
 	int button_pressed = 0;
-	int ret;
-	struct gpio_desc desc;
+	int board = is_dart_board() ? 0 : 1;
 
 	/* Check Recovery Combo Button press or not. */
-	SETUP_IOMUX_PADS(recovery_key_pads);
+	SETUP_IOMUX_PADS(back_key_pad[board]);
 
-	ret = dm_gpio_lookup_name("GPIO1_5", &desc);
-	if (ret) {
-		printf("%s lookup GPIO1_5 failed ret = %d\n", __func__, ret);
-		return;
-	}
+	gpio_request(back_key_gpio[board], "Back key");
+	gpio_direction_input(back_key_gpio[board]);
 
-	ret = dm_gpio_request(&desc, "volume_dn_key");
-	if (ret) {
-		printf("%s request volume_dn_key failed ret = %d\n", __func__, ret);
-		return;
-	}
-
-	dm_gpio_set_dir_flags(&desc, GPIOD_IS_IN);
-
-	if (dm_gpio_get_value(&desc) == 0) { /* VOL_DN key is low assert */
+	if (gpio_get_value(back_key_gpio[board]) == 0) { /* BACK key is low assert */
 		button_pressed = 1;
 		printf("Recovery key pressed\n");
 	}
 
-	return  button_pressed;
+	return button_pressed;
 }
-
-#endif /*CONFIG_ANDROID_RECOVERY*/
-
-#endif /*CONFIG_FSL_FASTBOOT*/
+#endif /* ifdef CONFIG_ANDROID_RECOVERY */
+#endif /* ifdef CONFIG_FSL_FASTBOOT */
+#endif /* ifndef CONFIG_SPL_BUILD */
 
 #ifdef CONFIG_SPL_BUILD
 #include <asm/arch/mx6-ddr.h>
