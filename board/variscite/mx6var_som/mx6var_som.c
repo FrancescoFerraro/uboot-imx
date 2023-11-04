@@ -431,6 +431,7 @@ int board_phy_config(struct phy_device *phydev)
 	return 0;
 }
 
+#if !defined(CONFIG_SPL_BUILD)
 #ifdef CONFIG_SPLASH_SCREEN
 #ifdef CONFIG_SPLASH_SOURCE
 static void set_splashsource_to_boot_rootfs(void)
@@ -496,6 +497,7 @@ int splash_screen_prepare(void)
 }
 #endif /* ifdef CONFIG_SPLASH_SOURCE */
 #endif /* ifdef CONFIG_SPLASH_SCREEN */
+#endif /* if !defined(CONFIG_SPL_BUILD) */
 
 #if defined(CONFIG_VIDEO_IPUV3)
 static void disable_lvds(struct display_info_t const *dev)
@@ -756,14 +758,67 @@ void ldo_mode_set(int ldo_bypass)
 #endif
 #endif
 
-int board_late_init(void)
+#ifndef CONFIG_SPL_BUILD
+static iomux_v3_cfg_t const usdhc1_gpio_pads[] = {
+	IOMUX_PADS(PAD_SD1_CLK__GPIO1_IO20	| MUX_PAD_CTRL(NO_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD1_CMD__GPIO1_IO18	| MUX_PAD_CTRL(NO_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD1_DAT0__GPIO1_IO16	| MUX_PAD_CTRL(NO_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD1_DAT1__GPIO1_IO17	| MUX_PAD_CTRL(NO_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD1_DAT2__GPIO1_IO19	| MUX_PAD_CTRL(NO_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD1_DAT3__GPIO1_IO21	| MUX_PAD_CTRL(NO_PAD_CTRL)),
+};
+
+static void print_emmc_size(void)
 {
-#if 0
-#ifdef CONFIG_ENV_IS_IN_MMC
-	mmc_late_init();
+	struct mmc *mmc;
+	int err;
+
+	mmc = find_mmc_device(0);
+	err = !mmc;
+	if (!err) {
+		/* Silence mmc_init since SOMs can be with or without eMMC */
+		int is_silent = (gd->flags & GD_FLG_SILENT);
+		if (!is_silent)
+			gd->flags |= GD_FLG_SILENT;
+		err = mmc_init(mmc);
+		if (!is_silent)
+			gd->flags &= ~GD_FLG_SILENT;
+	}
+
+	if (err) {
+		puts("No eMMC\n");
+		if (!is_dart_board()) {
+			/* VAR-SOM-MX6 rev 1.X externally exposes SD1 pins: */
+			/* avoid any HW conflict configuring them as inputs */
+			puts("Configuring SD1 pins as inputs\n");
+			SETUP_IOMUX_PADS(usdhc1_gpio_pads);
+			gpio_request(IMX_GPIO_NR(1, 16), "");
+			gpio_request(IMX_GPIO_NR(1, 17), "");
+			gpio_request(IMX_GPIO_NR(1, 18), "");
+			gpio_request(IMX_GPIO_NR(1, 19), "");
+			gpio_request(IMX_GPIO_NR(1, 20), "");
+			gpio_request(IMX_GPIO_NR(1, 21), "");
+			gpio_direction_input(IMX_GPIO_NR(1, 16));
+			gpio_direction_input(IMX_GPIO_NR(1, 17));
+			gpio_direction_input(IMX_GPIO_NR(1, 18));
+			gpio_direction_input(IMX_GPIO_NR(1, 19));
+			gpio_direction_input(IMX_GPIO_NR(1, 20));
+			gpio_direction_input(IMX_GPIO_NR(1, 21));
+		}
+		return;
+	}
+
+	puts("eMMC:  ");
+	print_size(mmc->capacity, "\n");
+}
 #endif
 
+int board_late_init(void)
+{
+#ifndef CONFIG_SPL_BUILD
+#ifdef CONFIG_ENV_IS_IN_MMC
 	print_emmc_size();
+#endif
 #endif
 
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
