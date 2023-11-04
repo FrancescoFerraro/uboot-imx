@@ -38,7 +38,6 @@
 #include <input.h>
 #include <power/pmic.h>
 #include <power/pfuze100_pmic.h>
-#include "../common/pfuze.h"
 #include <usb.h>
 #include <usb/ehci-ci.h>
 #include <asm/arch/mx6-ddr.h>
@@ -729,34 +728,233 @@ int board_init(void)
 	return 0;
 }
 
+static struct pmic *pfuze;
+
+struct pmic_write_values {
+	u32 reg;
+	u32 mask;
+	u32 writeval;
+};
+
+static int pmic_write_val(struct pmic *p, struct pmic_write_values pmic_struct)
+{
+	unsigned int val = 0;
+	int retval = 0;
+
+	if (!p) {
+		printf("No PMIC found!\n");
+		return -1;
+	}
+
+	retval += pmic_reg_read(p, pmic_struct.reg, &val);
+	val &= ~(pmic_struct.mask);
+	val |= pmic_struct.writeval;
+	retval += pmic_reg_write(p, pmic_struct.reg, val);
+
+	if (retval)
+		printf("PMIC write voltages error!\n");
+
+	return retval;
+}
+
+static int pmic_write_vals(struct pmic *p, struct pmic_write_values *arr, int arr_size)
+{
+	int i, retval;
+
+	for (i = 0; i < arr_size; ++i) {
+		retval = pmic_write_val(p, arr[i]);
+		if (retval)
+			return retval;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_POWER_LEGACY
-int power_init_board(void)
-{
-	//struct pmic *pfuze;
-	return 0;
-}
-
-#elif defined(CONFIG_DM_PMIC_PFUZE100)
-int power_init_board(void)
-{
-	//struct udevice *dev;
-	return 0;
-}
-#endif
-
 #ifdef CONFIG_LDO_BYPASS_CHECK
-#ifdef CONFIG_POWER_LEGACY
 void ldo_mode_set(int ldo_bypass)
 {
-	//struct pmic *p = pmic_get("PFUZE100");
+	if (!is_som_solo()) {
+		struct pmic *p = pfuze;
+
+		struct pmic_write_values ldo_mode_arr[] = {
+			/* Set SW1AB to 1.325V */
+			{PFUZE100_SW1ABVOL, SW1x_NORMAL_MASK, SW1x_1_325V},
+			/* Set SW1C to 1.325V */
+			{PFUZE100_SW1CVOL, SW1x_NORMAL_MASK, SW1x_1_325V}
+		};
+
+		if (pmic_write_vals(p, ldo_mode_arr, ARRAY_SIZE(ldo_mode_arr)))
+			return;
+
+		set_anatop_bypass(0);
+		printf("switch to ldo_bypass mode!\n");
+	}
 }
-#elif defined(CONFIG_DM_PMIC_PFUZE100)
-void ldo_mode_set(int ldo_bypass)
+#endif
+
+static int pfuze_mode_init(struct pmic *p, u32 mode)
 {
-	//struct udevice *dev;
+	unsigned char offset, i, switch_num;
+	u32 id;
+	int ret;
+
+	pmic_reg_read(p, PFUZE100_DEVICEID, &id);
+	id = id & 0xf;
+
+	if (id == 0) {
+		switch_num = 6;
+		offset = PFUZE100_SW1CMODE;
+	} else if (id == 1) {
+		switch_num = 4;
+		offset = PFUZE100_SW2MODE;
+	} else {
+		printf("Not supported, id=%d\n", id);
+		return -EINVAL;
+	}
+
+	ret = pmic_reg_write(p, PFUZE100_SW1ABMODE, mode);
+	if (ret < 0) {
+		printf("Set SW1AB mode error!\n");
+		return ret;
+	}
+
+	for (i = 0; i < switch_num - 1; i++) {
+		ret = pmic_reg_write(p, offset + i * SWITCH_SIZE, mode);
+		if (ret < 0) {
+			printf("Set switch 0x%x mode error!\n",
+			       offset + i * SWITCH_SIZE);
+			return ret;
+		}
+	}
+
+	return ret;
 }
+
+int power_init_board(void)
+{
+	if (!is_som_solo()) {
+		unsigned int reg;
+		int retval;
+
+		retval = power_pfuze100_init(PMIC_I2C_BUS);
+		if (retval)
+			return -ENODEV;
+		pfuze = pmic_get("PFUZE100");
+		retval = pmic_probe(pfuze);
+		if (retval)
+			return -ENODEV;
+		pmic_reg_read(pfuze, PFUZE100_DEVICEID, &reg);
+		printf("PMIC:  PFUZE100 ID=0x%02x\n", reg);
+
+		if (is_dart_board()) {
+
+			struct pmic_write_values dart_pmic_arr[] = {
+				/* Set SW1AB standby volage to 0.9V */
+				{PFUZE100_SW1ABSTBY, SW1x_STBY_MASK, SW1x_0_900V},
+
+				/* Set SW1AB off volage to 0.9V */
+				{PFUZE100_SW1ABOFF, SW1x_OFF_MASK, SW1x_0_900V},
+
+				/* Set SW1C standby voltage to 0.9V */
+				{PFUZE100_SW1CSTBY, SW1x_STBY_MASK, SW1x_0_900V},
+
+				/* Set SW1C off volage to 0.9V */
+				{PFUZE100_SW1COFF, SW1x_OFF_MASK, SW1x_0_900V},
+
+				/* Set SW2 to 3.3V */
+				{PFUZE100_SW2VOL, SWx_NORMAL_MASK, SWx_HR_3_300V},
+
+				/* Set SW2 standby voltage to 3.2V */
+				{PFUZE100_SW2STBY, SWx_STBY_MASK, SWx_HR_3_200V},
+
+				/* Set SW2 off voltage to 3.2V */
+				{PFUZE100_SW2OFF, SWx_OFF_MASK, SWx_HR_3_200V},
+
+				/* Set SW1AB/VDDARM step ramp up time 2us */
+				{PFUZE100_SW1ABCONF, SW1xCONF_DVSSPEED_MASK, SW1xCONF_DVSSPEED_2US},
+
+				/* Set SW1AB, SW1C, SW2 normal mode to PWM, and standby mode to PFM */
+				{PFUZE100_SW1ABMODE, SW_MODE_MASK, PWM_PFM},
+				{PFUZE100_SW1CMODE, SW_MODE_MASK, PWM_PFM},
+				{PFUZE100_SW2MODE, SW_MODE_MASK, PWM_PFM},
+
+				/* Set VGEN6 to 3.3V */
+				{PFUZE100_VGEN6VOL, LDO_VOL_MASK, LDOB_3_30V}
+			};
+
+			retval = pmic_write_vals(pfuze, dart_pmic_arr, ARRAY_SIZE(dart_pmic_arr));
+
+		} else {
+
+			struct pmic_write_values pmic_arr[] = {
+				/* Set SW1AB standby volage to 0.975V */
+				{PFUZE100_SW1ABSTBY, SW1x_STBY_MASK, SW1x_0_975V},
+
+				/* Set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
+				{PFUZE100_SW1ABCONF, SW1xCONF_DVSSPEED_MASK, SW1xCONF_DVSSPEED_4US},
+
+				/* Set SW1C standby voltage to 0.975V */
+				{PFUZE100_SW1CSTBY, SW1x_STBY_MASK, SW1x_0_975V},
+
+				/* Set Gigbit Ethernet voltage */
+				{PFUZE100_SW4VOL, SWx_NORMAL_MASK, SWx_LR_1_200V},
+
+				/* Increase VGEN5 from 2.8 to 3V */
+				{PFUZE100_VGEN5VOL, LDO_VOL_MASK, LDOB_3_00V},
+
+				/* Set VGEN3 to 2.5V */
+				{PFUZE100_VGEN3VOL, LDO_VOL_MASK, LDOB_2_50V},
+#ifdef LOW_POWER_MODE_ENABLE
+				/* Set low power mode voltages to disable */
+
+				/* SW2 already set to 3.2V in SPL */
+
+				/* Set SW3A standby voltage to 1.275V */
+				{PFUZE100_SW3ASTBY, SWx_STBY_MASK, SWx_LR_1_275V},
+
+				/* Set SW3A off voltage to 1.275V */
+				{PFUZE100_SW3AOFF, SWx_OFF_MASK, SWx_LR_1_275V},
+
+				/* SW4MODE = OFF in standby */
+				{PFUZE100_SW4MODE, SW_MODE_MASK, PWM_OFF},
+
+				/* Set VGEN4CTL = low power in standby */
+				{PFUZE100_VGEN4VOL, (LDO_MODE_MASK | LDO_EXT_MODE_MASK), \
+					((LDO_MODE_ON << LDO_MODE_SHIFT) | LDO_EXT_MODE_ON_LPM << LDO_EXT_MODE_SHIFT)},
+
+				/* Set VGEN6CTL = OFF in standby */
+				{PFUZE100_VGEN6VOL, (LDO_MODE_MASK | LDO_EXT_MODE_MASK), \
+					((LDO_MODE_ON << LDO_MODE_SHIFT) | LDO_EXT_MODE_ON_OFF << LDO_EXT_MODE_SHIFT)},
+
+				/* Set VGEN3CTL = low power */
+				{PFUZE100_VGEN3VOL, (LDO_MODE_MASK | LDO_EXT_MODE_MASK), \
+					((LDO_MODE_ON << LDO_MODE_SHIFT) | LDO_EXT_MODE_LPM_LPM << LDO_EXT_MODE_SHIFT)}
+#else
+				/* Set VGEN3CTL = low power in standby */
+				{PFUZE100_VGEN3VOL, (LDO_MODE_MASK | LDO_EXT_MODE_MASK), \
+					((LDO_MODE_ON << LDO_MODE_SHIFT) | LDO_EXT_MODE_ON_LPM << LDO_EXT_MODE_SHIFT)}
 #endif
-#endif
+			};
+
+			if (is_mx6dqp())
+				pfuze_mode_init(pfuze, APS_APS);
+
+			retval = pmic_write_vals(pfuze, pmic_arr, ARRAY_SIZE(pmic_arr));
+		}
+
+		/* Set SW1C/VDDSOC step ramp up time from 16us to 4us/25mV */
+		retval += pmic_write_val(pfuze,
+				(struct pmic_write_values)
+				{PFUZE100_SW1CCONF, SW1xCONF_DVSSPEED_MASK, SW1xCONF_DVSSPEED_4US});
+
+		if (retval)
+			return retval;
+	}
+
+	return 0;
+}
+#endif /* ifdef CONFIG_POWER_LEGACY */
 
 #ifndef CONFIG_SPL_BUILD
 static iomux_v3_cfg_t const usdhc1_gpio_pads[] = {
@@ -933,6 +1131,30 @@ static void ccgr_init(void)
 	writel(0x000003FF, &ccm->CCGR6);
 }
 
+static int power_init_pmic_sw2(void)
+{
+	if (!is_som_solo() && !is_dart_board()) {
+		unsigned char reg;
+
+		i2c_set_bus_num(PMIC_I2C_BUS);
+
+		if (i2c_probe(CONFIG_POWER_PFUZE100_I2C_ADDR))
+			return -1;
+
+		/* Set SW2 to 3.2V */
+		if (i2c_read(CONFIG_POWER_PFUZE100_I2C_ADDR, PFUZE100_SW2VOL, 1, &reg, 1))
+			return -1;
+
+		reg &= ~0x7f;
+		reg |= 0x70; /* SW2x 3.2V */
+
+		if (i2c_write(CONFIG_POWER_PFUZE100_I2C_ADDR, PFUZE100_SW2VOL, 1, &reg, 1))
+			return -1;
+	}
+
+	return 0;
+}
+
 /*
  * Bugfix: Fix Freescale wrong processor documentation.
  */
@@ -975,6 +1197,14 @@ void board_init_f(ulong dummy)
 
 	/* UART clocks enabled and gd valid - init serial console */
 	preloader_console_init();
+
+	mdelay(150);
+
+#ifdef LOW_POWER_MODE_ENABLE
+	power_init_pmic_sw2();
+#endif
+
+	mdelay(180);
 
 	/* DDR initialization */
 	spl_dram_init();
