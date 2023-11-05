@@ -765,9 +765,8 @@ dtb-y += \
 	imx6dl-sabreauto-ecspi.dtb \
 	imx6dl-sabreauto-gpmi-weim.dtb \
 	imx6dl-sabresd.dtb \
-	imx6dl-var-som-solo-symphony.dtb \
 	imx6dl-wandboard-revd1.dtb \
-
+	imx6dl-var-som-solo-symphony.dtb
 endif
 
 ifneq ($(CONFIG_MX6Q)$(CONFIG_MX6QDL)$(CONFIG_MX6QP),)
@@ -820,12 +819,14 @@ dtb-y += \
 	imx6q-sabresd.dtb \
 	imx6q-tbs2910.dtb \
 	imx6q-wandboard-revd1.dtb \
+	imx6q-var-som-symphony.dtb \
+	imx6q-var-dart.dtb \
 	imx6qp-sabreauto.dtb \
 	imx6qp-sabreauto-ecspi.dtb \
 	imx6qp-sabreauto-gpmi-weim.dtb \
 	imx6qp-sabresd.dtb \
 	imx6qp-wandboard-revd1.dtb \
-
+	imx6qp-var-som-symphony.dtb
 endif
 
 dtb-$(CONFIG_MX6SL) += imx6sl-evk.dtb

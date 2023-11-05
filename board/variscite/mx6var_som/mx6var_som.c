@@ -1227,17 +1227,101 @@ int board_fit_config_name_match(const char *name)
 {
 	int idx = get_board_indx();
 
-	if ((idx == DART_BOARD) && !strcmp(name, "imx6q-var-dart"))
-		return 0;
-	else if ((idx == SYMPHONY_BOARD) && !strcmp(name, "imx6dl-var-som-solo-symphony"))
-		return 0;
-#if 0
-	else if ((idx == SOLO_CUSTOM_BOARD) && !strcmp(name, ""))
-		return 0;
-	else if ((idx == MX6_CUSTOM_BOARD) && !strcmp(name, ""))
-		return 0;
-#endif
-	else
-		return -1;
+	switch (idx) {
+	case DART_BOARD:
+		if (!strcmp(name, "imx6q-var-dart"))
+			return 0;
+		break;
+	case SYMPHONY_BOARD:
+		if (is_mx6sdl()) {
+			if (!strcmp(name, "imx6dl-var-som-solo-symphony"))
+				return 0;
+		} else if (is_mx6dq()) {
+			if (!strcmp(name, "imx6q-var-som-symphony"))
+				return 0;
+		} else if (is_mx6dqp()) {
+			if (!strcmp(name, "imx6q-var-som-symphony"))
+				return 0;
+		}
+		break;
+	case SOLO_CUSTOM_BOARD:
+		if (!strcmp(name, "imx6q-var-dart"))
+			return 0;
+		break;
+	case MX6_CUSTOM_BOARD:
+		if (!strcmp(name, "imx6q-var-dart"))
+			return 0;
+		break;
+	}
+
+	return -1;
 }
 #endif
+
+/*
+arch/arm/boot/dts/imx6qp-var-som-symphony.dtb
+arch/arm/boot/dts/imx6q-var-dart.dtb
+arch/arm/boot/dts/imx6qp-var-som-res.dtb
+arch/arm/boot/dts/imx6qp-var-som-cap.dtb
+arch/arm/boot/dts/imx6q-var-som-cap.dtb
+arch/arm/boot/dts/imx6q-var-som-res.dtb
+arch/arm/boot/dts/imx6q-var-som-vsc.dtb
+arch/arm/boot/dts/imx6qp-var-som-vsc.dtb
+arch/arm/boot/dts/imx6q-var-som-symphony.dtb
+
+
+ff@ff-MS-7C75:~/ssd-dev/var/kernel/linux-imx$ grep -nr "imx6q-var-som.dtsi" arch/arm/boot/dts/ --include "imx6*var*.dts"
+arch/arm/boot/dts/imx6q-var-som-res.dts:9:#include "imx6q-var-som.dtsi"
+arch/arm/boot/dts/imx6q-var-som-symphony.dts:9:#include "imx6q-var-som.dtsi"
+arch/arm/boot/dts/imx6q-var-som-vsc.dts:9:#include "imx6q-var-som.dtsi"
+arch/arm/boot/dts/imx6q-var-som-cap.dts:9:#include "imx6q-var-som.dtsi"
+
+uSD
+ff@ff-MS-7C75:~/ssd-dev/var/kernel/linux-imx$ ll /media/ff/rootfs/opt/images/Yocto/
+total 1037788
+drwxr-xr-x 2 root root      4096 nov 15  2021 ./
+drwxr-xr-x 4 root root      4096 nov 15  2021 ../
+-rw-r--r-- 1 root root     48207 nov 15  2021 imx6dl-var-som-cap.dtb
+-rw-r--r-- 1 root root     48207 nov 15  2021 imx6dl-var-som-res.dtb
+-rw-r--r-- 1 root root     48096 nov 15  2021 imx6dl-var-som-solo-cap.dtb
+-rw-r--r-- 1 root root     48096 nov 15  2021 imx6dl-var-som-solo-res.dtb
+-rw-r--r-- 1 root root     48636 nov 15  2021 imx6dl-var-som-solo-symphony.dtb
+-rw-r--r-- 1 root root     48959 nov 15  2021 imx6dl-var-som-solo-vsc.dtb
+-rw-r--r-- 1 root root     48755 nov 15  2021 imx6dl-var-som-symphony.dtb
+-rw-r--r-- 1 root root     49074 nov 15  2021 imx6dl-var-som-vsc.dtb
+-rw-r--r-- 1 root root     51263 nov 15  2021 imx6qp-var-som-cap.dtb
+-rw-r--r-- 1 root root     51263 nov 15  2021 imx6qp-var-som-res.dtb
+-rw-r--r-- 1 root root     51811 nov 15  2021 imx6qp-var-som-symphony.dtb
+-rw-r--r-- 1 root root     52134 nov 15  2021 imx6qp-var-som-vsc.dtb
+-rw-r--r-- 1 root root     49399 nov 15  2021 imx6q-var-dart.dtb
+-rw-r--r-- 1 root root     49440 nov 15  2021 imx6q-var-som-cap.dtb
+-rw-r--r-- 1 root root     49440 nov 15  2021 imx6q-var-som-res.dtb
+-rw-r--r-- 1 root root     49988 nov 15  2021 imx6q-var-som-symphony.dtb
+-rw-r--r-- 1 root root     50311 nov 15  2021 imx6q-var-som-vsc.dtb
+-rw-r--r-- 1 root root 393871360 nov 15  2021 rootfs_128kbpeb.ubi
+-rw-r--r-- 1 root root 393740288 nov 15  2021 rootfs_256kbpeb.ubi
+-rw-r--r-- 1 root root 265213022 nov 15  2021 rootfs.tar.gz
+-rw-r--r-- 1 root root     44032 nov 15  2021 SPL-nand
+-rw-r--r-- 1 root root     64512 nov 15  2021 SPL-sd
+-rw-r--r-- 1 root root    552024 nov 15  2021 u-boot.img-nand
+-rw-r--r-- 1 root root    374440 nov 15  2021 u-boot.img-sd
+-rw-r--r-- 1 root root   7939816 nov 15  2021 uImage
+
+arch/arm/boot/dts/imx6dl-var-som-symphony.dtb
+arch/arm/boot/dts/imx6dl-var-som-res.dtb
+arch/arm/boot/dts/imx6dl-var-som-solo-vsc.dtb
+arch/arm/boot/dts/imx6dl-var-som-vsc.dtb
+arch/arm/boot/dts/imx6dl-var-som-solo-symphony.dtb
+arch/arm/boot/dts/imx6dl-var-som-solo-res.dtb
+arch/arm/boot/dts/imx6dl-var-som-cap.dtb
+arch/arm/boot/dts/imx6dl-var-som-solo-cap.dtb
+arch/arm/boot/dts/imx6qp-var-som-symphony.dtb
+arch/arm/boot/dts/imx6q-var-dart.dtb
+arch/arm/boot/dts/imx6qp-var-som-res.dtb
+arch/arm/boot/dts/imx6qp-var-som-cap.dtb
+arch/arm/boot/dts/imx6q-var-som-cap.dtb
+arch/arm/boot/dts/imx6q-var-som-res.dtb
+arch/arm/boot/dts/imx6q-var-som-vsc.dtb
+arch/arm/boot/dts/imx6qp-var-som-vsc.dtb
+arch/arm/boot/dts/imx6q-var-som-symphony.dtb
+*/
