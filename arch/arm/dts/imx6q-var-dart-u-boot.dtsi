@@ -6,7 +6,6 @@
 
 / {
 	aliases {
-		usb0 = &usbotg;
 		mmc0 = &usdhc3;
 		mmc1 = &usdhc2;
 	};

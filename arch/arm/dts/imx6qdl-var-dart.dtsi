@@ -269,7 +269,5 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc3_3>;
 	non-removable;
-	keep-power-in-suspend;
-	enable-sdio-wakeup;
 	status = "okay";
 };

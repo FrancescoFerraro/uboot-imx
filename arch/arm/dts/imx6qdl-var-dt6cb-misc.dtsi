@@ -91,7 +91,5 @@
 	pinctrl-0 = <&pinctrl_usdhc2_2>, <&pinctrl_usdhc2_gpio>;
 	cd-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 	no-1-8-v;
-	keep-power-in-suspend;
-	enable-sdio-wakeup;
 	status = "okay";
 };

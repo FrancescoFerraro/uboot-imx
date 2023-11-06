@@ -821,6 +821,7 @@ dtb-y += \
 	imx6q-wandboard-revd1.dtb \
 	imx6q-var-som-symphony.dtb \
 	imx6q-var-dart.dtb \
+	imx6q-var-som-mx6cb.dtb \
 	imx6qp-sabreauto.dtb \
 	imx6qp-sabreauto-ecspi.dtb \
 	imx6qp-sabreauto-gpmi-weim.dtb \

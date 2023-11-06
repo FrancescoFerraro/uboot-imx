@@ -1229,28 +1229,40 @@ int board_fit_config_name_match(const char *name)
 
 	switch (idx) {
 	case DART_BOARD:
-		if (!strcmp(name, "imx6q-var-dart"))
+		if (!strcmp(name, "imx6q-var-dart")) {
+			printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
 			return 0;
+		}
 		break;
 	case SYMPHONY_BOARD:
 		if (is_mx6sdl()) {
-			if (!strcmp(name, "imx6dl-var-som-solo-symphony"))
+			if (!strcmp(name, "imx6dl-var-som-solo-symphony")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
 				return 0;
+			}
 		} else if (is_mx6dq()) {
-			if (!strcmp(name, "imx6q-var-som-symphony"))
+			if (!strcmp(name, "imx6q-var-som-symphony")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
 				return 0;
+			}
 		} else if (is_mx6dqp()) {
-			if (!strcmp(name, "imx6q-var-som-symphony"))
+			if (!strcmp(name, "imx6q-var-som-symphony")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
 				return 0;
+			}
 		}
 		break;
 	case SOLO_CUSTOM_BOARD:
-		if (!strcmp(name, "imx6q-var-dart"))
+		if (!strcmp(name, "imx6q-var-dart")) {
+			printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
 			return 0;
+		}
 		break;
 	case MX6_CUSTOM_BOARD:
-		if (!strcmp(name, "imx6q-var-dart"))
+		if (!strcmp(name, "imx6q-var-dart")) {
+			printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
 			return 0;
+		}
 		break;
 	}
 
