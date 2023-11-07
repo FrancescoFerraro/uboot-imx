@@ -63,6 +63,28 @@
 #define MMC_ROOT_PART	2
 #endif
 
+//----------------------------------
+#undef MTDIDS_DEFAULT
+#undef MTDPARTS_DEFAULT
+
+#define MTDIDS_DEFAULT		"nand0=nandflash-0"
+
+/*
+ * Partitions layout for NAND is:
+ *     mtd0: 2M       (spl) First boot loader
+ *     mtd1: 2M       (u-boot, dtb)
+ *     mtd2: 8M       (kernel)
+ *     mtd3: left     (rootfs)
+ */
+/* Default mtd partition table */
+#define MTDPARTS_DEFAULT	"mtdparts=nandflash-0:"\
+					"2m(spl),"\
+					"2m(u-boot),"\
+					"8m(kernel),"\
+					"-(rootfs)"	/* ubifs */
+//----------------------------------
+
+
 #define MMC_BOOT_ENV_SETTINGS \
 	"bootenv=uEnv.txt\0" \
 	"script=boot.scr\0" \
@@ -112,7 +134,7 @@
 		"root=ubi0:rootfs rootfstype=ubifs\0" \
 	"rootfs_device=nand\0" \
 	"boot_device=nand\0" \
-	"nandboot=nand read ${loadaddr} 0x400000 0x800000; " \
+	"nandboot=nand read ${loadaddr} 0x400000 0xc00000; " \
 		"nand read ${fdt_addr} 0x3e0000 0x20000; " \
 		"bootm ${loadaddr} - ${fdt_addr};\0" \
 	"bootcmd=" \
@@ -279,6 +301,9 @@
 	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_SYS_INIT_SP_ADDR \
 	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
+
+/* NAND stuff */
+#define CONFIG_SYS_MAX_NAND_DEVICE	1
 
 /* I2C Configs */
 #define PMIC_I2C_BUS		1

@@ -29,6 +29,7 @@
 #include <asm/mach-imx/video.h>
 #include <mmc.h>
 #include <fsl_esdhc_imx.h>
+#include <micrel.h>
 #include <miiphy.h>
 #include <asm/arch/mxc_hdmi.h>
 #include <asm/arch/crm_regs.h>
@@ -60,6 +61,15 @@ DECLARE_GLOBAL_DATA_PTR;
 #define USDHC_PAD_CTRL (PAD_CTL_PUS_47K_UP |			\
 	PAD_CTL_SPEED_LOW | PAD_CTL_DSE_80ohm |			\
 	PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
+
+#define GPMI_PAD_CTRL0 (PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_100K_UP)
+#define GPMI_PAD_CTRL1 (PAD_CTL_DSE_40ohm | PAD_CTL_SPEED_MED | \
+			PAD_CTL_SRE_FAST)
+#define GPMI_PAD_CTRL2 (GPMI_PAD_CTRL0 | GPMI_PAD_CTRL1)
+
+#define PER_VCC_EN_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |	\
+	PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED |	\
+	PAD_CTL_DSE_40ohm   | PAD_CTL_HYS)
 
 #define I2C_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS |	\
@@ -422,6 +432,61 @@ int board_mmc_init(struct bd_info *bis)
 #endif /* if !CONFIG_IS_ENABLED(DM_MMC) */
 #endif /* ifdef CONFIG_FSL_ESDHC_IMX */
 
+#ifdef CONFIG_NAND_MXS
+static iomux_v3_cfg_t const gpmi_pads[] = {
+	IOMUX_PADS(PAD_NANDF_CLE__NAND_CLE	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_ALE__NAND_ALE	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_WP_B__NAND_WP_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_RB0__NAND_READY_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL0)),
+	IOMUX_PADS(PAD_NANDF_CS0__NAND_CE0_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_SD4_CMD__NAND_RE_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_SD4_CLK__NAND_WE_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_D0__NAND_DATA00	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_D1__NAND_DATA01	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_D2__NAND_DATA02	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_D3__NAND_DATA03	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_D4__NAND_DATA04	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_D5__NAND_DATA05	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_D6__NAND_DATA06	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_NANDF_D7__NAND_DATA07	| MUX_PAD_CTRL(GPMI_PAD_CTRL2)),
+	IOMUX_PADS(PAD_SD4_DAT0__NAND_DQS	| MUX_PAD_CTRL(GPMI_PAD_CTRL1)),
+};
+
+static void setup_gpmi_nand(void)
+{
+	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+	printf("FF: %s %d\n", __func__, __LINE__);
+	SETUP_IOMUX_PADS(gpmi_pads);
+
+	/* gate ENFC_CLK_ROOT clock first,before clk source switch */
+	clrbits_le32(&mxc_ccm->CCGR2, MXC_CCM_CCGR2_IOMUX_IPT_CLK_IO_MASK);
+
+	/* config gpmi and bch clock to 100 MHz */
+	clrsetbits_le32(&mxc_ccm->cs2cdr,
+			MXC_CCM_CS2CDR_ENFC_CLK_PODF_MASK |
+			MXC_CCM_CS2CDR_ENFC_CLK_PRED_MASK |
+			MXC_CCM_CS2CDR_ENFC_CLK_SEL_MASK,
+			MXC_CCM_CS2CDR_ENFC_CLK_PODF(0) |
+			MXC_CCM_CS2CDR_ENFC_CLK_PRED(3) |
+			MXC_CCM_CS2CDR_ENFC_CLK_SEL(3));
+
+	/* enable ENFC_CLK_ROOT clock */
+	setbits_le32(&mxc_ccm->CCGR2, MXC_CCM_CCGR2_IOMUX_IPT_CLK_IO_MASK);
+
+	/* enable gpmi and bch clock gating */
+	setbits_le32(&mxc_ccm->CCGR4,
+			MXC_CCM_CCGR4_RAWNAND_U_BCH_INPUT_APB_MASK |
+			MXC_CCM_CCGR4_RAWNAND_U_GPMI_BCH_INPUT_BCH_MASK |
+			MXC_CCM_CCGR4_RAWNAND_U_GPMI_BCH_INPUT_GPMI_IO_MASK |
+			MXC_CCM_CCGR4_RAWNAND_U_GPMI_INPUT_APB_MASK |
+			MXC_CCM_CCGR4_PL301_MX6QPER1_BCH_OFFSET);
+
+	/* enable apbh clock gating */
+	setbits_le32(&mxc_ccm->CCGR0, MXC_CCM_CCGR0_APBHDMA_MASK);
+}
+#endif
+
+#if 0
 int board_phy_config(struct phy_device *phydev)
 {
 	if (phydev->drv->config)
@@ -429,6 +494,36 @@ int board_phy_config(struct phy_device *phydev)
 
 	return 0;
 }
+#else
+// no "Waiting for PHY auto negotiation to complete" issuing dhcp cmd from U-Boot !
+int board_phy_config(struct phy_device *phydev)
+{
+	if (phydev->drv->config)
+		phydev->drv->config(phydev);
+
+	/* manually configure PHY as master during master-slave negotiation */
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x9, 0x1c00);
+
+	/* control data pad skew */
+	ksz9031_phy_extended_write(phydev, 0x02,
+			MII_KSZ9031_EXT_RGMII_CTRL_SIG_SKEW,
+			MII_KSZ9031_MOD_DATA_NO_POST_INC, 0x0000);
+	/* rx data pad skew */
+	ksz9031_phy_extended_write(phydev, 0x02,
+			MII_KSZ9031_EXT_RGMII_RX_DATA_SKEW,
+			MII_KSZ9031_MOD_DATA_NO_POST_INC, 0x0000);
+	/* tx data pad skew */
+	ksz9031_phy_extended_write(phydev, 0x02,
+			MII_KSZ9031_EXT_RGMII_TX_DATA_SKEW,
+			MII_KSZ9031_MOD_DATA_NO_POST_INC, 0x0000);
+	/* gtx and rx clock pad skew */
+	ksz9031_phy_extended_write(phydev, 0x02,
+			MII_KSZ9031_EXT_RGMII_CLOCK_SKEW,
+			MII_KSZ9031_MOD_DATA_NO_POST_INC, 0x03FF);
+
+	return 0;
+}
+#endif
 
 #if !defined(CONFIG_SPL_BUILD)
 #ifdef CONFIG_SPLASH_SCREEN
@@ -1161,6 +1256,25 @@ static int power_init_pmic_sw2(void)
 	return 0;
 }
 
+static void setup_iomux_var_per_vcc_en(void)
+{
+	SETUP_IOMUX_PAD(PAD_EIM_D31__GPIO3_IO31 | MUX_PAD_CTRL(PER_VCC_EN_PAD_CTRL));
+	gpio_request(IMX_GPIO_NR(3, 31), "3.3V Enable");
+	gpio_direction_output(IMX_GPIO_NR(3, 31), 1);
+}
+
+static void setup_iomux_audiocodec(void)
+{
+	SETUP_IOMUX_PAD(PAD_GPIO_19__GPIO4_IO05 | MUX_PAD_CTRL(NO_PAD_CTRL));
+	gpio_request(IMX_GPIO_NR(4, 5), "Audio Codec Reset");
+	gpio_direction_output(IMX_GPIO_NR(4, 5), 1);
+}
+
+static void audiocodec_reset(int rst)
+{
+	gpio_set_value(IMX_GPIO_NR(4, 5), !rst);
+}
+
 /*
  * Bugfix: Fix Freescale wrong processor documentation.
  */
@@ -1195,6 +1309,10 @@ void board_init_f(ulong dummy)
 	ccgr_init();
 	gpr_init();
 
+	setup_iomux_var_per_vcc_en();
+	setup_iomux_audiocodec();
+	audiocodec_reset(1);
+
 	/* iomux and setup of i2c */
 	board_early_init_f();
 
@@ -1203,7 +1321,7 @@ void board_init_f(ulong dummy)
 
 	/* UART clocks enabled and gd valid - init serial console */
 	preloader_console_init();
-
+	printf("FF: %s %d\n", __func__, __LINE__);
 	mdelay(150);
 
 #ifdef LOW_POWER_MODE_ENABLE
@@ -1246,7 +1364,7 @@ int board_fit_config_name_match(const char *name)
 				return 0;
 			}
 		} else if (is_mx6dqp()) {
-			if (!strcmp(name, "imx6q-var-som-symphony")) {
+			if (!strcmp(name, "imx6qp-var-som-symphony")) {
 				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
 				return 0;
 			}
@@ -1259,11 +1377,22 @@ int board_fit_config_name_match(const char *name)
 		}
 		break;
 	case MX6_CUSTOM_BOARD:
-		if (!strcmp(name, "imx6q-var-dart")) {
-			printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
-			return 0;
+		if (is_mx6sdl()) {
+			if (!strcmp(name, "imx6dl-var-som-mx6cb")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
+				return 0;
+			}
+		} else if (is_mx6dq()) {
+			if (!strcmp(name, "imx6q-var-som-mx6cb")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
+				return 0;
+			}
+		} else if (is_mx6dqp()) {
+			if (!strcmp(name, "imx6qp-var-som-mx6cb")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
+				return 0;
+			}
 		}
-		break;
 	}
 
 	return -1;
