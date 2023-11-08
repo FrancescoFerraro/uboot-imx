@@ -82,6 +82,9 @@
 					"2m(u-boot),"\
 					"8m(kernel),"\
 					"-(rootfs)"	/* ubifs */
+#ifndef CONFIG_BOOTCOMMAND
+#define CONFIG_BOOTCOMMAND	""
+#endif
 //----------------------------------
 
 

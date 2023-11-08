@@ -87,6 +87,49 @@ DECLARE_GLOBAL_DATA_PTR;
 
 bool lvds_enabled=false;
 
+#if CONFIG_IS_ENABLED(DM_I2C)
+/*
+ * Returns true if the SOM is VAR-SOM-SOLO
+ */
+static int dm_i2c_chip_probe(uint8_t num_bus, uint8_t chip_addr)
+{
+	struct udevice *bus, *dev;
+	int ret;
+	printf("FF: %s %d bus:%d chip_addr:0x%x\n", __func__, __LINE__, num_bus, chip_addr);
+	ret = uclass_get_device_by_seq(UCLASS_I2C, num_bus, &bus);
+	if (ret) {
+		printf("Get i2c bus %u failed, ret = %d\n", num_bus, ret);
+		return ret;
+	}
+
+	ret = dm_i2c_probe(bus, chip_addr, 0, &dev);
+	return ret;
+}
+
+static bool is_som_solo(void)
+{
+	/* Probing for PMIC which is preset on all SOM types but SOM-SOLO */
+	return (0 != dm_i2c_chip_probe(PMIC_I2C_BUS, CONFIG_POWER_PFUZE100_I2C_ADDR));
+}
+
+/*
+ * Returns true if the carrier board is VAR-SOLOCustomBoard
+ */
+static bool is_solo_custom_board(void)
+{
+	/* Probing for extra EEPROM present only on SOLOCustomBoard */
+	return (0 == dm_i2c_chip_probe(1, 0x51));
+}
+
+/*
+ * Returns true if the carrier board is SymphonyBoard
+ */
+static bool is_symphony_board(void)
+{
+	/* Probing for extra PCA9534 present only on SymphonyBoard */
+	return (0 == dm_i2c_chip_probe(0, 0x20));
+}
+#else
 /*
  * Returns true if the SOM is VAR-SOM-SOLO
  */
@@ -95,6 +138,7 @@ static bool is_som_solo(void)
 	bool ret;
 	int oldbus = i2c_get_bus_num();
 
+	printf("FF: %s %d\n", __func__, __LINE__);
 	i2c_set_bus_num(PMIC_I2C_BUS);
 	/* Probing for PMIC which is preset on all SOM types but SOM-SOLO */
 	ret = (0 != i2c_probe(CONFIG_POWER_PFUZE100_I2C_ADDR));
@@ -111,6 +155,7 @@ static bool is_solo_custom_board(void)
 	bool ret;
 	int oldbus = i2c_get_bus_num();
 
+	printf("FF: %s %d\n", __func__, __LINE__);
 	i2c_set_bus_num(1);
 	/* Probing for extra EEPROM present only on SOLOCustomBoard */
 	ret = (0 == i2c_probe(0x51));
@@ -127,6 +172,7 @@ static bool is_symphony_board(void)
 	bool ret;
 	int oldbus = i2c_get_bus_num();
 
+	printf("FF: %s %d\n", __func__, __LINE__);
 	i2c_set_bus_num(0);
 	/* Probing for extra PCA9534 present only on SymphonyBoard */
 	ret = (0 == i2c_probe(0x20));
@@ -134,6 +180,7 @@ static bool is_symphony_board(void)
 	i2c_set_bus_num(oldbus);
 	return ret;
 }
+#endif
 
 static bool is_cpu_pop_packaged(void)
 {
@@ -244,7 +291,7 @@ static int env_check(char *var, char *val)
 }
 #endif
 
-#ifdef CONFIG_SYS_I2C_LEGACY
+
 #ifdef CONFIG_SYS_I2C_MXC
 I2C_PADS(i2c_pad_info1,
 	PAD_CSI0_DAT9__I2C1_SCL | MUX_PAD_CTRL(I2C_PAD_CTRL),
@@ -277,21 +324,11 @@ static void setup_local_i2c(void)
 	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, I2C_PADS_INFO(i2c_pad_info3));
 }
 #endif
-#endif
 
 static void setup_iomux_uart(void)
 {
 	SETUP_IOMUX_PADS(uart1_pads);
 }
-
-#ifdef CONFIG_ENV_IS_IN_MMC
-int mmc_map_to_kernel_blk(int dev_no)
-{
-	if ((!is_dart_board()) && (dev_no == 1))
-		return 0;
-	return dev_no + 1;
-}
-#endif
 
 #ifdef CONFIG_FSL_ESDHC_IMX
 #if !CONFIG_IS_ENABLED(DM_MMC)
@@ -631,8 +668,13 @@ static int detect_mx6cb_cdisplay(struct display_info_t const *dev)
 	if (!is_mx6_custom_board())
 		return 0;
 
+#if CONFIG_IS_ENABLED(DM_I2C)
+	/* FIXME */
+	return false;
+#else
 	i2c_set_bus_num(dev->bus);
 	return (0 == i2c_probe(dev->addr));
+#endif
 }
 
 static int detect_mx6cb_rdisplay(struct display_info_t const *dev)
@@ -640,9 +682,14 @@ static int detect_mx6cb_rdisplay(struct display_info_t const *dev)
 	if (!is_mx6_custom_board())
 		return 0;
 
+#if CONFIG_IS_ENABLED(DM_I2C)
+	/* FIXME */
+	return false;
+#else
 	/* i2c probe the *c*display */
 	i2c_set_bus_num(MX6CB_CDISPLAY_I2C_BUS);
 	return (0 != i2c_probe(MX6CB_CDISPLAY_I2C_ADDR));
+#endif
 }
 
 #define MHZ2PS(f)	(1000000/(f))
@@ -803,9 +850,9 @@ int overwrite_console(void)
 int board_early_init_f(void)
 {
 	setup_iomux_uart();
-#ifdef CONFIG_SYS_I2C_LEGACY
+
 	setup_local_i2c();
-#endif
+
 #ifdef CONFIG_NAND_MXS
 	setup_gpmi_nand();
 #endif
@@ -928,6 +975,7 @@ static int pfuze_mode_init(struct pmic *p, u32 mode)
 
 int power_init_board(void)
 {
+	printf("FF: %s %d\n", __func__, __LINE__);
 	if (!is_som_solo()) {
 		unsigned int reg;
 		int retval;
@@ -1151,48 +1199,6 @@ int checkboard(void)
 
 	return 0;
 }
-
-#ifdef CONFIG_FSL_FASTBOOT
-#ifdef CONFIG_ANDROID_RECOVERY
-
-static int back_key_gpio[] = {
-	/* DART */
-	IMX_GPIO_NR(4, 26),
-	/* Non-DART */
-	IMX_GPIO_NR(5, 20)
-};
-
-static iomux_v3_cfg_t const back_key_pad[][1*2] = {
-	{
-		/* DART */
-		IOMUX_PADS(PAD_DISP0_DAT5__GPIO4_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL)),
-	},
-	{
-		/* Non-DART */
-		IOMUX_PADS(PAD_CSI0_DATA_EN__GPIO5_IO20 | MUX_PAD_CTRL(NO_PAD_CTRL)),
-	}
-};
-
-int is_recovery_key_pressing(void)
-{
-	int button_pressed = 0;
-	int board = is_dart_board() ? 0 : 1;
-
-	/* Check Recovery Combo Button press or not. */
-	SETUP_IOMUX_PADS(back_key_pad[board]);
-
-	gpio_request(back_key_gpio[board], "Back key");
-	gpio_direction_input(back_key_gpio[board]);
-
-	if (gpio_get_value(back_key_gpio[board]) == 0) { /* BACK key is low assert */
-		button_pressed = 1;
-		printf("Recovery key pressed\n");
-	}
-
-	return button_pressed;
-}
-#endif /* ifdef CONFIG_ANDROID_RECOVERY */
-#endif /* ifdef CONFIG_FSL_FASTBOOT */
 #endif /* ifndef CONFIG_SPL_BUILD */
 
 #ifdef CONFIG_SPL_BUILD
@@ -1353,8 +1359,13 @@ int board_fit_config_name_match(const char *name)
 		}
 		break;
 	case SYMPHONY_BOARD:
-		if (is_mx6sdl()) {
+		if (is_som_solo()) {
 			if (!strcmp(name, "imx6dl-var-som-solo-symphony")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
+				return 0;
+			}
+		} else if (is_mx6sdl()) {
+			if (!strcmp(name, "imx6dl-var-som-symphony")) {
 				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
 				return 0;
 			}
@@ -1370,14 +1381,39 @@ int board_fit_config_name_match(const char *name)
 			}
 		}
 		break;
+
 	case SOLO_CUSTOM_BOARD:
-		if (!strcmp(name, "imx6q-var-dart")) {
-			printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
-			return 0;
+		if (is_som_solo()) {
+			if (!strcmp(name, "imx6dl-var-som-solo-vsc")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
+				return 0;
+			}
+		} else if (is_mx6sdl()) {
+			if (!strcmp(name, "imx6dl-var-som-vsc")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
+				return 0;
+			}
+		} else if (is_mx6dq()) {
+			if (!strcmp(name, "imx6q-var-som-vsc")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
+				return 0;
+			}
+		} else if (is_mx6dqp()) {
+			if (!strcmp(name, "imx6qp-var-som-vsc")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
+				return 0;
+			}
 		}
 		break;
+
 	case MX6_CUSTOM_BOARD:
-		if (is_mx6sdl()) {
+		/* FIXME: add r and c displays (in toal 8 dtbs) */
+		if (is_som_solo()) {
+			if (!strcmp(name, "imx6dl-var-som-solo-mx6cb")) {
+				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
+				return 0;
+			}
+		} else if (is_mx6sdl()) {
 			if (!strcmp(name, "imx6dl-var-som-mx6cb")) {
 				printf("FF: %s %d dtb:<%s>\n", __func__, __LINE__, name);
 				return 0;
