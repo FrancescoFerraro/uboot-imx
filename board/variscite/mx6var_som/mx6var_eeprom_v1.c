@@ -21,21 +21,6 @@ static inline bool var_eeprom_v1_is_valid(const struct var_eeprom_v1_cfg *p_var_
 	return (VARISCITE_MAGIC == p_var_eeprom_v1_cfg->header.variscite_magic);
 }
 
-static void var_eeprom_v1_print_production_info(const struct var_eeprom_v1_cfg *p_var_eeprom_v1_cfg)
-{
-	printf("\nPart number: %.*s\n",
-			(int)sizeof(p_var_eeprom_v1_cfg->header.part_number) - 1,
-			(char *) p_var_eeprom_v1_cfg->header.part_number);
-
-	printf("Assembly: %.*s\n",
-			(int)sizeof(p_var_eeprom_v1_cfg->header.assembly) - 1,
-			(char *) p_var_eeprom_v1_cfg->header.assembly);
-
-	printf("Date of production: %.*s\n",
-			(int)sizeof(p_var_eeprom_v1_cfg->header.date) - 1,
-			(char *) p_var_eeprom_v1_cfg->header.date);
-}
-
 #if CONFIG_IS_ENABLED(DM_I2C)
 static int var_eeprom_v1_probe(struct udevice **dev)
 {
@@ -94,6 +79,21 @@ static int var_eeprom_v1_probe(void)
 #include <asm/arch/sys_proto.h>
 
 void var_set_ram_size(u32 ram_size);
+
+static void var_eeprom_v1_print_production_info(const struct var_eeprom_v1_cfg *p_var_eeprom_v1_cfg)
+{
+	printf("\nPart number: %.*s\n",
+			(int)sizeof(p_var_eeprom_v1_cfg->header.part_number) - 1,
+			(char *) p_var_eeprom_v1_cfg->header.part_number);
+
+	printf("Assembly: %.*s\n",
+			(int)sizeof(p_var_eeprom_v1_cfg->header.assembly) - 1,
+			(char *) p_var_eeprom_v1_cfg->header.assembly);
+
+	printf("Date of production: %.*s\n",
+			(int)sizeof(p_var_eeprom_v1_cfg->header.date) - 1,
+			(char *) p_var_eeprom_v1_cfg->header.date);
+}
 
 static int var_eeprom_v1_read_struct(struct var_eeprom_v1_cfg *p_var_eeprom_v1_cfg)
 {

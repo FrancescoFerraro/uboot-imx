@@ -492,7 +492,7 @@ static iomux_v3_cfg_t const gpmi_pads[] = {
 static void setup_gpmi_nand(void)
 {
 	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
-	printf("FF: %s %d\n", __func__, __LINE__);
+
 	SETUP_IOMUX_PADS(gpmi_pads);
 
 	/* gate ENFC_CLK_ROOT clock first,before clk source switch */
@@ -1098,6 +1098,7 @@ int power_init_board(void)
 #endif /* ifdef CONFIG_POWER_LEGACY */
 
 #ifndef CONFIG_SPL_BUILD
+#ifdef CONFIG_ENV_IS_IN_MMC
 static iomux_v3_cfg_t const usdhc1_gpio_pads[] = {
 	IOMUX_PADS(PAD_SD1_CLK__GPIO1_IO20	| MUX_PAD_CTRL(NO_PAD_CTRL)),
 	IOMUX_PADS(PAD_SD1_CMD__GPIO1_IO18	| MUX_PAD_CTRL(NO_PAD_CTRL)),
@@ -1150,6 +1151,7 @@ static void print_emmc_size(void)
 	puts("eMMC:  ");
 	print_size(mmc->capacity, "\n");
 }
+#endif /* ifdef CONFIG_ENV_IS_IN_MMC */
 
 int board_late_init(void)
 {

@@ -63,31 +63,6 @@
 #define MMC_ROOT_PART	2
 #endif
 
-//----------------------------------
-#undef MTDIDS_DEFAULT
-#undef MTDPARTS_DEFAULT
-
-#define MTDIDS_DEFAULT		"nand0=nandflash-0"
-
-/*
- * Partitions layout for NAND is:
- *     mtd0: 2M       (spl) First boot loader
- *     mtd1: 2M       (u-boot, dtb)
- *     mtd2: 8M       (kernel)
- *     mtd3: left     (rootfs)
- */
-/* Default mtd partition table */
-#define MTDPARTS_DEFAULT	"mtdparts=nandflash-0:"\
-					"2m(spl),"\
-					"2m(u-boot),"\
-					"8m(kernel),"\
-					"-(rootfs)"	/* ubifs */
-#ifndef CONFIG_BOOTCOMMAND
-#define CONFIG_BOOTCOMMAND	""
-#endif
-//----------------------------------
-
-
 #define MMC_BOOT_ENV_SETTINGS \
 	"bootenv=uEnv.txt\0" \
 	"script=boot.scr\0" \
@@ -132,6 +107,24 @@
 		"fi;\0"
 
 #ifdef CONFIG_NAND_BOOT
+
+#define MMC_BOOTCMD \
+	"mmc dev ${mmcdev};" \
+	"if mmc rescan; then " \
+		"if run loadbootenv; then " \
+			"run importbootenv; " \
+		"fi; " \
+		"if run loadbootscript; then " \
+			"run bootscript; " \
+		"else " \
+			"if run loaduimage; then " \
+				"run mmcboot; " \
+			"else " \
+				"run netboot; " \
+			"fi; " \
+		"fi; " \
+	"else run netboot; fi;"
+
 #define NAND_BOOT_ENV_SETTINGS \
 	"nandargs=setenv bootargs console=${console},${baudrate} ubi.mtd=3 " \
 		"root=ubi0:rootfs rootfstype=ubifs\0" \
@@ -156,11 +149,9 @@
 				"run nandboot; " \
 			"else " \
 				"setenv mmcdev 1; " \
-				CONFIG_BOOTCOMMAND \
+				MMC_BOOTCMD \
 			"fi; " \
-		"fi;\0" \
-	"mtdids=" MTDIDS_DEFAULT "\0" \
-	"mtdparts=" MTDPARTS_DEFAULT "\0"
+		"fi;\0"
 #else
 #define NAND_BOOT_ENV_SETTINGS ""
 #endif
@@ -306,7 +297,10 @@
 	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 
 /* NAND stuff */
+#ifdef CONFIG_NAND_MXS
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
+#define CONFIG_SYS_NAND_BASE		0x40000000
+#endif
 
 /* I2C Configs */
 #define PMIC_I2C_BUS		1
