@@ -767,6 +767,8 @@ dtb-y += \
 	imx6dl-sabresd.dtb \
 	imx6dl-wandboard-revd1.dtb \
 	imx6dl-var-som-solo-symphony.dtb \
+	imx6dl-var-som-symphony.dtb \
+	imx6dl-var-som-solo-mx6cb.dtb \
 	imx6dl-var-som-mx6cb.dtb
 endif
 

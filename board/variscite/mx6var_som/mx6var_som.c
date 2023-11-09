@@ -669,8 +669,7 @@ static int detect_mx6cb_cdisplay(struct display_info_t const *dev)
 		return 0;
 
 #if CONFIG_IS_ENABLED(DM_I2C)
-	/* FIXME */
-	return false;
+	return (0 == dm_i2c_chip_probe(dev->bus, dev->addr));
 #else
 	i2c_set_bus_num(dev->bus);
 	return (0 == i2c_probe(dev->addr));
@@ -683,8 +682,7 @@ static int detect_mx6cb_rdisplay(struct display_info_t const *dev)
 		return 0;
 
 #if CONFIG_IS_ENABLED(DM_I2C)
-	/* FIXME */
-	return false;
+	return (0 != dm_i2c_chip_probe(MX6CB_CDISPLAY_I2C_BUS, MX6CB_CDISPLAY_I2C_ADDR));
 #else
 	/* i2c probe the *c*display */
 	i2c_set_bus_num(MX6CB_CDISPLAY_I2C_BUS);
@@ -1358,6 +1356,7 @@ int board_fit_config_name_match(const char *name)
 			return 0;
 		}
 		break;
+
 	case SYMPHONY_BOARD:
 		if (is_som_solo()) {
 			if (!strcmp(name, "imx6dl-var-som-solo-symphony")) {

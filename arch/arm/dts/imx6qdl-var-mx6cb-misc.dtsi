@@ -10,6 +10,13 @@
 
 &iomuxc {
 	imx6qdl-var-som-mx6 {
+		pinctrl_i2c3: i2c3grp {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_5__I2C3_SCL		0x4001b8b1
+				MX6QDL_PAD_GPIO_16__I2C3_SDA		0x4001b8b1
+			>;
+		};
+
 		pinctrl_usdhc2_gpio: usdhc2gpiogrp {
 			fsl,pins = <
 				/* SDMMC2 CD/WP */
@@ -17,6 +24,13 @@
 			>;
 		};
 	};
+};
+
+&i2c3 {
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c3>;
+	status = "okay";
 };
 
 &usdhc2 {	/* uSDHC2, MMC/SD card */
