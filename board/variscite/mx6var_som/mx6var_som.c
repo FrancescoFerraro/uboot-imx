@@ -87,6 +87,13 @@ DECLARE_GLOBAL_DATA_PTR;
 
 bool lvds_enabled=false;
 
+enum mmc_boot_device {
+	USDHC1,
+	USDHC2,
+	USDHC3,
+	USDHC4,
+};
+
 #if CONFIG_IS_ENABLED(DM_I2C)
 /*
  * Returns true if the SOM is VAR-SOM-SOLO
@@ -332,54 +339,10 @@ static void setup_iomux_uart(void)
 
 #ifdef CONFIG_FSL_ESDHC_IMX
 #if !CONFIG_IS_ENABLED(DM_MMC)
-static iomux_v3_cfg_t const usdhc1_pads[] = {
-	IOMUX_PADS(PAD_SD1_CLK__SD1_CLK		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD1_CMD__SD1_CMD		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD1_DAT0__SD1_DATA0	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD1_DAT1__SD1_DATA1	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD1_DAT2__SD1_DATA2	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD1_DAT3__SD1_DATA3	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-};
-
-static iomux_v3_cfg_t const usdhc2_pads[] = {
-	IOMUX_PADS(PAD_SD2_CLK__SD2_CLK		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD2_CMD__SD2_CMD		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD2_DAT0__SD2_DATA0	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD2_DAT1__SD2_DATA1	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD2_DAT2__SD2_DATA2	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD2_DAT3__SD2_DATA3	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-};
-
-static iomux_v3_cfg_t const usdhc3_pads[] = {
-	IOMUX_PADS(PAD_SD3_CLK__SD3_CLK		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD3_CMD__SD3_CMD		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD3_DAT0__SD3_DATA0	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD3_DAT1__SD3_DATA1	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD3_DAT2__SD3_DATA2	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-	IOMUX_PADS(PAD_SD3_DAT3__SD3_DATA3	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
-};
-
 struct fsl_esdhc_cfg usdhc_cfg[2] = {
 	{USDHC1_BASE_ADDR},
 	{USDHC2_BASE_ADDR},
 };
-
-enum mmc_boot_device {
-	USDHC1,
-	USDHC2,
-	USDHC3,
-	USDHC4,
-};
-
-int board_mmc_get_env_dev(int devno)
-{
-	if ((devno == USDHC1) || (devno == USDHC3))
-		return 1; /* eMMC (non DART || DART) */
-	else if (devno == USDHC2)
-		return 0; /* SD card */
-	else
-		return -1;
-}
 
 static int usdhc2_cd_gpio[] = {
 	/* DART */
@@ -411,6 +374,33 @@ int board_mmc_getcd(struct mmc *mmc)
 }
 
 #ifdef CONFIG_SPL_BUILD
+static iomux_v3_cfg_t const usdhc1_pads[] = {
+	IOMUX_PADS(PAD_SD1_CLK__SD1_CLK		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD1_CMD__SD1_CMD		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD1_DAT0__SD1_DATA0	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD1_DAT1__SD1_DATA1	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD1_DAT2__SD1_DATA2	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD1_DAT3__SD1_DATA3	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+};
+
+static iomux_v3_cfg_t const usdhc2_pads[] = {
+	IOMUX_PADS(PAD_SD2_CLK__SD2_CLK		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD2_CMD__SD2_CMD		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD2_DAT0__SD2_DATA0	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD2_DAT1__SD2_DATA1	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD2_DAT2__SD2_DATA2	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD2_DAT3__SD2_DATA3	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+};
+
+static iomux_v3_cfg_t const usdhc3_pads[] = {
+	IOMUX_PADS(PAD_SD3_CLK__SD3_CLK		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD3_CMD__SD3_CMD		| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD3_DAT0__SD3_DATA0	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD3_DAT1__SD3_DATA1	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD3_DAT2__SD3_DATA2	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+	IOMUX_PADS(PAD_SD3_DAT3__SD3_DATA3	| MUX_PAD_CTRL(USDHC_PAD_CTRL)),
+};
+
 static enum mmc_boot_device get_mmc_boot_device(void)
 {
 	struct src *psrc = (struct src *)SRC_BASE_ADDR;
@@ -1098,7 +1088,6 @@ int power_init_board(void)
 #endif /* ifdef CONFIG_POWER_LEGACY */
 
 #ifndef CONFIG_SPL_BUILD
-#ifdef CONFIG_ENV_IS_IN_MMC
 static iomux_v3_cfg_t const usdhc1_gpio_pads[] = {
 	IOMUX_PADS(PAD_SD1_CLK__GPIO1_IO20	| MUX_PAD_CTRL(NO_PAD_CTRL)),
 	IOMUX_PADS(PAD_SD1_CMD__GPIO1_IO18	| MUX_PAD_CTRL(NO_PAD_CTRL)),
@@ -1107,6 +1096,31 @@ static iomux_v3_cfg_t const usdhc1_gpio_pads[] = {
 	IOMUX_PADS(PAD_SD1_DAT2__GPIO1_IO19	| MUX_PAD_CTRL(NO_PAD_CTRL)),
 	IOMUX_PADS(PAD_SD1_DAT3__GPIO1_IO21	| MUX_PAD_CTRL(NO_PAD_CTRL)),
 };
+
+#ifdef CONFIG_ENV_IS_IN_MMC
+int mmc_map_to_kernel_blk(int dev_no)
+{
+	printf("FF: %s %d dev_no:%d\n", __func__, __LINE__, dev_no);
+	return dev_no;
+}
+
+static void mmc_late_init(void)
+{
+	char cmd[32];
+	u32 dev_no = mmc_get_env_dev();
+
+	if (!env_check("mmcautodetect", "yes"))
+		return;
+
+	env_set_ulong("mmcdev", dev_no);
+
+	/* Set mmcblk env */
+	env_set_ulong("mmcblk", mmc_map_to_kernel_blk(dev_no));
+
+	sprintf(cmd, "mmc dev %d", dev_no);
+	run_command(cmd, 0);
+}
+#endif
 
 static void print_emmc_size(void)
 {
@@ -1151,13 +1165,25 @@ static void print_emmc_size(void)
 	puts("eMMC:  ");
 	print_size(mmc->capacity, "\n");
 }
-#endif /* ifdef CONFIG_ENV_IS_IN_MMC */
+
+int board_mmc_get_env_dev(int devno)
+{
+	printf("FF: %s %d devno:%d\n", __func__, __LINE__, devno);
+	if ((devno == USDHC1) || (devno == USDHC3))
+		return 0; /* eMMC (non DART || DART) */
+	else if (devno == USDHC2)
+		return 1; /* SD card */
+	else
+		return -1;
+}
 
 int board_late_init(void)
 {
 #ifdef CONFIG_ENV_IS_IN_MMC
-	print_emmc_size();
+	mmc_late_init();
 #endif
+
+	print_emmc_size();
 
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 	if (is_dart_board())
@@ -1319,15 +1345,12 @@ void board_init_f(ulong dummy)
 	setup_iomux_audiocodec();
 	audiocodec_reset(1);
 
-	/* iomux and setup of i2c */
-	board_early_init_f();
-
 	/* setup GP timer */
 	timer_init();
 
-	/* UART clocks enabled and gd valid - init serial console */
-	preloader_console_init();
-	printf("FF: %s %d\n", __func__, __LINE__);
+	/* iomux and setup of i2c */
+	board_early_init_f();
+
 	mdelay(150);
 
 #ifdef LOW_POWER_MODE_ENABLE
@@ -1335,6 +1358,12 @@ void board_init_f(ulong dummy)
 #endif
 
 	mdelay(180);
+
+	audiocodec_reset(0);
+
+	/* UART clocks enabled and gd valid - init serial console */
+	preloader_console_init();
+	printf("FF: %s %d\n", __func__, __LINE__);
 
 	/* DDR initialization */
 	spl_dram_init();
@@ -1503,3 +1532,4 @@ arch/arm/boot/dts/imx6q-var-som-vsc.dtb
 arch/arm/boot/dts/imx6qp-var-som-vsc.dtb
 arch/arm/boot/dts/imx6q-var-som-symphony.dtb
 */
+
