@@ -70,7 +70,7 @@
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \
 	"mmcdev=" __stringify(CONFIG_SYS_MMC_ENV_DEV) "\0" \
-	"mmcblk=1\0" \
+	"mmcblk=0\0" \
 	"mmcautodetect=yes\0" \
 	"mmcbootpart=1\0" \
 	"mmcrootpart=" __stringify(MMC_ROOT_PART) "\0" \
@@ -148,7 +148,7 @@
 				"echo booting from nand (rootfs on emmc)...; " \
 				"run nandboot; " \
 			"else " \
-				"setenv mmcdev 1; " \
+				"setenv mmcdev 0; " \
 				MMC_BOOTCMD \
 			"fi; " \
 		"fi;\0"

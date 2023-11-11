@@ -102,7 +102,7 @@ static int dm_i2c_chip_probe(uint8_t num_bus, uint8_t chip_addr)
 {
 	struct udevice *bus, *dev;
 	int ret;
-	printf("FF: %s %d bus:%d chip_addr:0x%x\n", __func__, __LINE__, num_bus, chip_addr);
+
 	ret = uclass_get_device_by_seq(UCLASS_I2C, num_bus, &bus);
 	if (ret) {
 		printf("Get i2c bus %u failed, ret = %d\n", num_bus, ret);
@@ -145,7 +145,6 @@ static bool is_som_solo(void)
 	bool ret;
 	int oldbus = i2c_get_bus_num();
 
-	printf("FF: %s %d\n", __func__, __LINE__);
 	i2c_set_bus_num(PMIC_I2C_BUS);
 	/* Probing for PMIC which is preset on all SOM types but SOM-SOLO */
 	ret = (0 != i2c_probe(CONFIG_POWER_PFUZE100_I2C_ADDR));
@@ -162,7 +161,6 @@ static bool is_solo_custom_board(void)
 	bool ret;
 	int oldbus = i2c_get_bus_num();
 
-	printf("FF: %s %d\n", __func__, __LINE__);
 	i2c_set_bus_num(1);
 	/* Probing for extra EEPROM present only on SOLOCustomBoard */
 	ret = (0 == i2c_probe(0x51));
@@ -179,7 +177,6 @@ static bool is_symphony_board(void)
 	bool ret;
 	int oldbus = i2c_get_bus_num();
 
-	printf("FF: %s %d\n", __func__, __LINE__);
 	i2c_set_bus_num(0);
 	/* Probing for extra PCA9534 present only on SymphonyBoard */
 	ret = (0 == i2c_probe(0x20));
@@ -561,12 +558,14 @@ static void set_splashsource_to_boot_rootfs(void)
 		return;
 
 #ifdef CONFIG_NAND_BOOT
+	printf("FF: %s %d\n", __func__, __LINE__);
 	env_set("splashsource", env_get("rootfs_device"));
 #else
-	if (mmc_get_env_dev() == 0)
-		env_set("splashsource", "sd");
-	else if (mmc_get_env_dev() == 1)
+	printf("FF: %s %d\n", __func__, __LINE__);
+	if (mmc_get_env_dev() == 2)
 		env_set("splashsource", "emmc");
+	else if (mmc_get_env_dev() == 1)
+		env_set("splashsource", "sd");
 #endif
 }
 
@@ -606,10 +605,8 @@ int splash_screen_prepare(void)
 	};
 
 	set_splashsource_to_boot_rootfs();
-
 	ret = splash_source_load(var_splash_locations,
 			ARRAY_SIZE(var_splash_locations));
-
 	/* Turn on backlight */
 	if (lvds_enabled)
 		gpio_set_value(VAR_SOM_BACKLIGHT_EN, 1);
@@ -1109,16 +1106,19 @@ static void mmc_late_init(void)
 	char cmd[32];
 	u32 dev_no = mmc_get_env_dev();
 
+	printf("FF: %s %d dev_no:%d\n", __func__, __LINE__, dev_no);
 	if (!env_check("mmcautodetect", "yes"))
 		return;
-
+	printf("FF: %s %d dev_no:%d\n", __func__, __LINE__, dev_no);
 	env_set_ulong("mmcdev", dev_no);
 
 	/* Set mmcblk env */
 	env_set_ulong("mmcblk", mmc_map_to_kernel_blk(dev_no));
 
 	sprintf(cmd, "mmc dev %d", dev_no);
+	printf("FF: %s %d dev_no:%d\n", __func__, __LINE__, dev_no);
 	run_command(cmd, 0);
+	printf("FF: %s %d dev_no:%d\n", __func__, __LINE__, dev_no);
 }
 #endif
 
@@ -1169,13 +1169,9 @@ static void print_emmc_size(void)
 int board_mmc_get_env_dev(int devno)
 {
 	printf("FF: %s %d devno:%d\n", __func__, __LINE__, devno);
-	if ((devno == USDHC1) || (devno == USDHC3))
-		return 0; /* eMMC (non DART || DART) */
-	else if (devno == USDHC2)
-		return 1; /* SD card */
-	else
-		return -1;
+	return devno;
 }
+
 
 int board_late_init(void)
 {
@@ -1363,7 +1359,6 @@ void board_init_f(ulong dummy)
 
 	/* UART clocks enabled and gd valid - init serial console */
 	preloader_console_init();
-	printf("FF: %s %d\n", __func__, __LINE__);
 
 	/* DDR initialization */
 	spl_dram_init();
@@ -1464,72 +1459,3 @@ int board_fit_config_name_match(const char *name)
 	return -1;
 }
 #endif
-
-/*
-arch/arm/boot/dts/imx6qp-var-som-symphony.dtb
-arch/arm/boot/dts/imx6q-var-dart.dtb
-arch/arm/boot/dts/imx6qp-var-som-res.dtb
-arch/arm/boot/dts/imx6qp-var-som-cap.dtb
-arch/arm/boot/dts/imx6q-var-som-cap.dtb
-arch/arm/boot/dts/imx6q-var-som-res.dtb
-arch/arm/boot/dts/imx6q-var-som-vsc.dtb
-arch/arm/boot/dts/imx6qp-var-som-vsc.dtb
-arch/arm/boot/dts/imx6q-var-som-symphony.dtb
-
-
-ff@ff-MS-7C75:~/ssd-dev/var/kernel/linux-imx$ grep -nr "imx6q-var-som.dtsi" arch/arm/boot/dts/ --include "imx6*var*.dts"
-arch/arm/boot/dts/imx6q-var-som-res.dts:9:#include "imx6q-var-som.dtsi"
-arch/arm/boot/dts/imx6q-var-som-symphony.dts:9:#include "imx6q-var-som.dtsi"
-arch/arm/boot/dts/imx6q-var-som-vsc.dts:9:#include "imx6q-var-som.dtsi"
-arch/arm/boot/dts/imx6q-var-som-cap.dts:9:#include "imx6q-var-som.dtsi"
-
-uSD
-ff@ff-MS-7C75:~/ssd-dev/var/kernel/linux-imx$ ll /media/ff/rootfs/opt/images/Yocto/
-total 1037788
-drwxr-xr-x 2 root root      4096 nov 15  2021 ./
-drwxr-xr-x 4 root root      4096 nov 15  2021 ../
--rw-r--r-- 1 root root     48207 nov 15  2021 imx6dl-var-som-cap.dtb
--rw-r--r-- 1 root root     48207 nov 15  2021 imx6dl-var-som-res.dtb
--rw-r--r-- 1 root root     48096 nov 15  2021 imx6dl-var-som-solo-cap.dtb
--rw-r--r-- 1 root root     48096 nov 15  2021 imx6dl-var-som-solo-res.dtb
--rw-r--r-- 1 root root     48636 nov 15  2021 imx6dl-var-som-solo-symphony.dtb
--rw-r--r-- 1 root root     48959 nov 15  2021 imx6dl-var-som-solo-vsc.dtb
--rw-r--r-- 1 root root     48755 nov 15  2021 imx6dl-var-som-symphony.dtb
--rw-r--r-- 1 root root     49074 nov 15  2021 imx6dl-var-som-vsc.dtb
--rw-r--r-- 1 root root     51263 nov 15  2021 imx6qp-var-som-cap.dtb
--rw-r--r-- 1 root root     51263 nov 15  2021 imx6qp-var-som-res.dtb
--rw-r--r-- 1 root root     51811 nov 15  2021 imx6qp-var-som-symphony.dtb
--rw-r--r-- 1 root root     52134 nov 15  2021 imx6qp-var-som-vsc.dtb
--rw-r--r-- 1 root root     49399 nov 15  2021 imx6q-var-dart.dtb
--rw-r--r-- 1 root root     49440 nov 15  2021 imx6q-var-som-cap.dtb
--rw-r--r-- 1 root root     49440 nov 15  2021 imx6q-var-som-res.dtb
--rw-r--r-- 1 root root     49988 nov 15  2021 imx6q-var-som-symphony.dtb
--rw-r--r-- 1 root root     50311 nov 15  2021 imx6q-var-som-vsc.dtb
--rw-r--r-- 1 root root 393871360 nov 15  2021 rootfs_128kbpeb.ubi
--rw-r--r-- 1 root root 393740288 nov 15  2021 rootfs_256kbpeb.ubi
--rw-r--r-- 1 root root 265213022 nov 15  2021 rootfs.tar.gz
--rw-r--r-- 1 root root     44032 nov 15  2021 SPL-nand
--rw-r--r-- 1 root root     64512 nov 15  2021 SPL-sd
--rw-r--r-- 1 root root    552024 nov 15  2021 u-boot.img-nand
--rw-r--r-- 1 root root    374440 nov 15  2021 u-boot.img-sd
--rw-r--r-- 1 root root   7939816 nov 15  2021 uImage
-
-arch/arm/boot/dts/imx6dl-var-som-symphony.dtb
-arch/arm/boot/dts/imx6dl-var-som-res.dtb
-arch/arm/boot/dts/imx6dl-var-som-solo-vsc.dtb
-arch/arm/boot/dts/imx6dl-var-som-vsc.dtb
-arch/arm/boot/dts/imx6dl-var-som-solo-symphony.dtb
-arch/arm/boot/dts/imx6dl-var-som-solo-res.dtb
-arch/arm/boot/dts/imx6dl-var-som-cap.dtb
-arch/arm/boot/dts/imx6dl-var-som-solo-cap.dtb
-arch/arm/boot/dts/imx6qp-var-som-symphony.dtb
-arch/arm/boot/dts/imx6q-var-dart.dtb
-arch/arm/boot/dts/imx6qp-var-som-res.dtb
-arch/arm/boot/dts/imx6qp-var-som-cap.dtb
-arch/arm/boot/dts/imx6q-var-som-cap.dtb
-arch/arm/boot/dts/imx6q-var-som-res.dtb
-arch/arm/boot/dts/imx6q-var-som-vsc.dtb
-arch/arm/boot/dts/imx6qp-var-som-vsc.dtb
-arch/arm/boot/dts/imx6q-var-som-symphony.dtb
-*/
-
