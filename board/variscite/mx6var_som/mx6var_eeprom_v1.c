@@ -44,7 +44,6 @@ void var_set_ram_size(u32 ram_size);
 
 static int var_eeprom_v1_probe(void)
 {
-	printf("FF: NO_DM_I2C %s %d\n", __func__, __LINE__);
 	i2c_set_bus_num(VAR_EEPROM_I2C_BUS);
 	return (i2c_probe(VAR_EEPROM_I2C_ADDR));
 }
@@ -251,7 +250,7 @@ static int var_eeprom_v1_probe(struct udevice **dev)
 {
 	int ret;
 	struct udevice *bus;
-	printf("FF: SI_DM_I2C %s %d\n", __func__, __LINE__);
+
 	ret = uclass_get_device_by_seq(UCLASS_I2C, VAR_EEPROM_I2C_BUS, &bus);
 	if (ret) {
 		printf("%s: No EEPROM I2C bus %d\n", __func__, VAR_EEPROM_I2C_BUS);

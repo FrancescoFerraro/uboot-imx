@@ -558,10 +558,8 @@ static void set_splashsource_to_boot_rootfs(void)
 		return;
 
 #ifdef CONFIG_NAND_BOOT
-	printf("FF: %s %d\n", __func__, __LINE__);
 	env_set("splashsource", env_get("rootfs_device"));
 #else
-	printf("FF: %s %d\n", __func__, __LINE__);
 	if (mmc_get_env_dev() == 2)
 		env_set("splashsource", "emmc");
 	else if (mmc_get_env_dev() == 1)
@@ -581,7 +579,6 @@ int splash_screen_prepare(void)
 
 	sprintf(sd_devpart_str, "1:%d", sd_part);
 	sprintf(emmc_devpart_str, "%d:%d", mmc_get_env_dev(), emmc_part);
-	printf("FF: %s %d sd_devpart_str:<%s> emmc_devpart_str:<%s> mmc_get_env_dev:%d  rootfs_device:<%s>\n", __func__, __LINE__, sd_devpart_str, emmc_devpart_str, mmc_get_env_dev(), env_get("rootfs_device"));
 	struct splash_location var_splash_locations[] = {
 		{
 			.name = "sd",
@@ -607,7 +604,7 @@ int splash_screen_prepare(void)
 	set_splashsource_to_boot_rootfs();
 	ret = splash_source_load(var_splash_locations,
 			ARRAY_SIZE(var_splash_locations));
-	printf("FF: %s %d ret:%d\n", __func__, __LINE__, ret);
+
 	/* Turn on backlight */
 	if (lvds_enabled)
 		gpio_set_value(VAR_SOM_BACKLIGHT_EN, 1);
@@ -961,7 +958,6 @@ static int pfuze_mode_init(struct pmic *p, u32 mode)
 
 int power_init_board(void)
 {
-	printf("FF: %s %d\n", __func__, __LINE__);
 	if (!is_som_solo()) {
 		unsigned int reg;
 		int retval;
@@ -1098,7 +1094,6 @@ static iomux_v3_cfg_t const usdhc1_gpio_pads[] = {
 #ifdef CONFIG_ENV_IS_IN_MMC
 int mmc_map_to_kernel_blk(int dev_no)
 {
-	printf("FF: %s %d dev_no:%d\n", __func__, __LINE__, dev_no);
 	return dev_no;
 }
 
@@ -1107,19 +1102,16 @@ static void mmc_late_init(void)
 	char cmd[32];
 	u32 dev_no = mmc_get_env_dev();
 
-	printf("FF: %s %d dev_no:%d\n", __func__, __LINE__, dev_no);
 	if (!env_check("mmcautodetect", "yes"))
 		return;
-	printf("FF: %s %d dev_no:%d\n", __func__, __LINE__, dev_no);
+
 	env_set_ulong("mmcdev", dev_no);
 
 	/* Set mmcblk env */
 	env_set_ulong("mmcblk", mmc_map_to_kernel_blk(dev_no));
 
 	sprintf(cmd, "mmc dev %d", dev_no);
-	printf("FF: %s %d dev_no:%d\n", __func__, __LINE__, dev_no);
 	run_command(cmd, 0);
-	printf("FF: %s %d dev_no:%d\n", __func__, __LINE__, dev_no);
 }
 #endif
 
@@ -1169,7 +1161,6 @@ static void print_emmc_size(void)
 
 int board_mmc_get_env_dev(int devno)
 {
-	printf("FF: %s %d devno:%d\n", __func__, __LINE__, devno);
 	return devno;
 }
 
