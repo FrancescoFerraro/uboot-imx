@@ -51,7 +51,14 @@
 #endif
 
 /* MMC Configs */
-#define CONFIG_SYS_FSL_ESDHC_ADDR      0
+#define CONFIG_SYS_FSL_ESDHC_ADDR	0
+#define CONFIG_SYS_FSL_USDHC_NUM	2
+#ifndef CONFIG_SYS_MMC_ENV_DEV
+#define CONFIG_SYS_MMC_ENV_DEV		1
+#endif
+#ifndef CONFIG_SYS_MMC_ENV_PART
+#define CONFIG_SYS_MMC_ENV_PART		0
+#endif
 
 /* Ethernet Configs */
 #define CONFIG_FEC_XCV_TYPE		RGMII

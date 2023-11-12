@@ -580,8 +580,8 @@ int splash_screen_prepare(void)
 	sd_part = emmc_part = env_get_ulong("mmcrootpart", 10, 0);
 
 	sprintf(sd_devpart_str, "1:%d", sd_part);
-	sprintf(emmc_devpart_str, "1:%d", emmc_part);
-
+	sprintf(emmc_devpart_str, "%d:%d", mmc_get_env_dev(), emmc_part);
+	printf("FF: %s %d sd_devpart_str:<%s> emmc_devpart_str:<%s> mmc_get_env_dev:%d  rootfs_device:<%s>\n", __func__, __LINE__, sd_devpart_str, emmc_devpart_str, mmc_get_env_dev(), env_get("rootfs_device"));
 	struct splash_location var_splash_locations[] = {
 		{
 			.name = "sd",
@@ -607,6 +607,7 @@ int splash_screen_prepare(void)
 	set_splashsource_to_boot_rootfs();
 	ret = splash_source_load(var_splash_locations,
 			ARRAY_SIZE(var_splash_locations));
+	printf("FF: %s %d ret:%d\n", __func__, __LINE__, ret);
 	/* Turn on backlight */
 	if (lvds_enabled)
 		gpio_set_value(VAR_SOM_BACKLIGHT_EN, 1);
