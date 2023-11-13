@@ -85,8 +85,6 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define VAR_SOM_BACKLIGHT_EN	IMX_GPIO_NR(4, 30)
 
-bool lvds_enabled=false;
-
 enum mmc_boot_device {
 	USDHC1,
 	USDHC2,
@@ -255,28 +253,6 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 	IOMUX_PADS(PAD_CSI0_DAT11__UART1_RX_DATA | MUX_PAD_CTRL(UART_PAD_CTRL)),
 };
 
-static iomux_v3_cfg_t const bl_pads[] = {
-	IOMUX_PADS(PAD_SD1_DAT3__GPIO1_IO21 | MUX_PAD_CTRL(NO_PAD_CTRL)),
-};
-
-static void enable_backlight(void)
-{
-	struct gpio_desc desc;
-	int ret;
-
-	SETUP_IOMUX_PADS(bl_pads);
-
-	ret = dm_gpio_lookup_name("GPIO4_30", &desc);
-	if (ret)
-		return;
-
-	ret = dm_gpio_request(&desc, "Display Power Enable");
-	if (ret)
-		return;
-
-	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE);
-}
-
 #if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_ENV_SUPPORT)
 static int env_check(char *var, char *val)
 {
@@ -422,7 +398,7 @@ int board_mmc_init(struct bd_info *bis)
 	puts("MMC Boot Device: ");
 	switch (get_mmc_boot_device()) {
 	case USDHC1:
-		puts("mmc1 (eMMC)");
+		puts("mmc0 (eMMC)");
 		SETUP_IOMUX_PADS(usdhc1_pads);
 		usdhc_cfg[0].esdhc_base = USDHC1_BASE_ADDR;
 		usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
@@ -430,7 +406,7 @@ int board_mmc_init(struct bd_info *bis)
 		usdhc_cfg[0].max_bus_width = 4;
 		break;
 	case USDHC2:
-		puts("mmc0 (SD)");
+		puts("mmc1 (SD)");
 		SETUP_IOMUX_PADS(usdhc2_pads);
 		usdhc_cfg[0].esdhc_base = USDHC2_BASE_ADDR;
 		usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
@@ -605,10 +581,6 @@ int splash_screen_prepare(void)
 	ret = splash_source_load(var_splash_locations,
 			ARRAY_SIZE(var_splash_locations));
 
-	/* Turn on backlight */
-	if (lvds_enabled)
-		gpio_set_value(VAR_SOM_BACKLIGHT_EN, 1);
-
 	return ret;
 }
 #endif /* ifdef CONFIG_SPLASH_SOURCE */
@@ -638,7 +610,8 @@ static void do_enable_hdmi(struct display_info_t const *dev)
 static void lvds_enable_disable(struct display_info_t const *dev)
 {
 	if (env_get("splashimage") != NULL)
-		lvds_enabled=true;
+		/* Turn on backlight */
+		gpio_set_value(VAR_SOM_BACKLIGHT_EN, 1);
 	else
 		disable_lvds(dev);
 }
@@ -773,7 +746,7 @@ static void setup_display(void)
 
 	/* Turn off backlight until display is ready */
 	gpio_request(VAR_SOM_BACKLIGHT_EN, "Display Backlight Enable");
-	gpio_direction_output(VAR_SOM_BACKLIGHT_EN , 1);
+	gpio_direction_output(VAR_SOM_BACKLIGHT_EN , 0);
 
 	enable_ipu_clock();
 	imx_setup_hdmi();

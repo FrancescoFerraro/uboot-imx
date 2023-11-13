@@ -7,15 +7,6 @@
  *
  * Buttons for VAR-DT6CustomBoard
  */
-/ {
-	backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pwm2 0 50000>;
-		brightness-levels = <0 4 8 16 32 64 128 248>;
-		default-brightness-level = <7>;
-		status = "okay";
-	};
-};
 
 &iomuxc {
 	imx6qdl-var-som-mx6 {
@@ -23,12 +14,6 @@
 			fsl,pins = <
 				MX6QDL_PAD_DISP0_DAT6__GPIO4_IO27	0x80000000
 				MX6QDL_PAD_DISP0_DAT7__GPIO4_IO28	0x80000000
-			>;
-		};
-
-		pinctrl_pwm2: pwm2grp {
-			fsl,pins = <
-				MX6QDL_PAD_DISP0_DAT9__PWM2_OUT		0x1b0b1
 			>;
 		};
 
@@ -57,13 +42,6 @@
 			>;
 		};
 	};
-};
-
-&pwm2 {
-	#pwm-cells = <2>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm2>;
-	status = "okay";
 };
 
 &reg_usb_h1_vbus {
