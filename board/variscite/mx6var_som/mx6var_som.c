@@ -486,21 +486,8 @@ static void setup_gpmi_nand(void)
 }
 #endif
 
-#if 0
 int board_phy_config(struct phy_device *phydev)
 {
-	if (phydev->drv->config)
-		phydev->drv->config(phydev);
-
-	return 0;
-}
-#else
-// no "Waiting for PHY auto negotiation to complete" issuing dhcp cmd from U-Boot !
-int board_phy_config(struct phy_device *phydev)
-{
-	if (phydev->drv->config)
-		phydev->drv->config(phydev);
-
 	/* manually configure PHY as master during master-slave negotiation */
 	phy_write(phydev, MDIO_DEVAD_NONE, 0x9, 0x1c00);
 
@@ -521,9 +508,11 @@ int board_phy_config(struct phy_device *phydev)
 			MII_KSZ9031_EXT_RGMII_CLOCK_SKEW,
 			MII_KSZ9031_MOD_DATA_NO_POST_INC, 0x03FF);
 
+	if (phydev->drv->config)
+		phydev->drv->config(phydev);
+
 	return 0;
 }
-#endif
 
 #if !defined(CONFIG_SPL_BUILD)
 #ifdef CONFIG_SPLASH_SCREEN
