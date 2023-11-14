@@ -598,9 +598,14 @@ static void do_enable_hdmi(struct display_info_t const *dev)
 
 static void lvds_enable_disable(struct display_info_t const *dev)
 {
-	if (env_get("splashimage") != NULL)
+	if (env_get("splashimage") != NULL) {
+		/* Setup backlight */
+		SETUP_IOMUX_PAD(PAD_DISP0_DAT9__GPIO4_IO30 | MUX_PAD_CTRL(NO_PAD_CTRL));
+
 		/* Turn on backlight */
-		gpio_set_value(VAR_SOM_BACKLIGHT_EN, 1);
+		gpio_request(VAR_SOM_BACKLIGHT_EN, "Display Backlight Enable");
+		gpio_direction_output(VAR_SOM_BACKLIGHT_EN , 1);
+	}
 	else
 		disable_lvds(dev);
 }
@@ -729,13 +734,6 @@ static void setup_display(void)
 	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
 	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
 	int reg;
-
-	/* Setup backlight */
-	SETUP_IOMUX_PAD(PAD_DISP0_DAT9__GPIO4_IO30 | MUX_PAD_CTRL(NO_PAD_CTRL));
-
-	/* Turn off backlight until display is ready */
-	gpio_request(VAR_SOM_BACKLIGHT_EN, "Display Backlight Enable");
-	gpio_direction_output(VAR_SOM_BACKLIGHT_EN , 0);
 
 	enable_ipu_clock();
 	imx_setup_hdmi();
