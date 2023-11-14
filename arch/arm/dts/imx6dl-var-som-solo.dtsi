@@ -25,6 +25,5 @@
 };
 
 &gpc {
-	/* use ldo-enable, u-boot will check it and configure */
 	fsl,ldo-bypass = <0>;
 };
