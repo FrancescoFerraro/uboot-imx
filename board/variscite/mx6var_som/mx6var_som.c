@@ -217,21 +217,6 @@ enum current_board {
 	MX6_CUSTOM_BOARD,
 };
 
-static enum current_board get_board_indx(void)
-{
-	if (is_dart_board())
-		return DART_BOARD;
-	if (is_symphony_board())
-		return SYMPHONY_BOARD;
-	if (is_solo_custom_board())
-		return SOLO_CUSTOM_BOARD;
-	if (is_mx6_custom_board())
-		return MX6_CUSTOM_BOARD;
-
-	printf("Error identifying carrier board!\n");
-	hang();
-}
-
 /*
  * Returns DRAM size in MiB
  */
@@ -1332,6 +1317,21 @@ void board_init_f(ulong dummy)
 #endif
 
 #ifdef CONFIG_SPL_LOAD_FIT
+static enum current_board get_board_indx(void)
+{
+	if (is_dart_board())
+		return DART_BOARD;
+	if (is_symphony_board())
+		return SYMPHONY_BOARD;
+	if (is_solo_custom_board())
+		return SOLO_CUSTOM_BOARD;
+	if (is_mx6_custom_board())
+		return MX6_CUSTOM_BOARD;
+
+	printf("Error identifying carrier board!\n");
+	hang();
+}
+
 int board_fit_config_name_match(const char *name)
 {
 	int idx = get_board_indx();
