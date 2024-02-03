@@ -59,7 +59,6 @@
 		"earlycon=ec_imx6q,0x30a60000,115200 " \
 		"init=/init " \
 		"androidboot.console=ttymxc3 " \
-		"consoleblank=0 " \
 		"androidboot.hardware=nxp " \
 		"firmware_class.path=/vendor/firmware " \
 		"loop.max_part=7 " \
