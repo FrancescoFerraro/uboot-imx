@@ -189,7 +189,7 @@
 #define PHYS_SDRAM                      0x90000000
 /* Totally 16GB */
 #define PHYS_SDRAM_SIZE			0x70000000 /* 2GB  - 256MB DDR */
-#define PHYS_SDRAM_2_SIZE 		0x380000000 /* 14GB */
+#define PHYS_SDRAM_2_SIZE 		0x180000000 /* 6GB */
 
 #define CFG_SYS_FSL_USDHC_NUM	2
 
