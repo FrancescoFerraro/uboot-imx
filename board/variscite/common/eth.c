@@ -3,6 +3,7 @@
 #include <miiphy.h>
 #include <env.h>
 
+#if !defined(CONFIG_IMX95)
 #if defined(CONFIG_IMX93)
 #include "../common/imx9_eeprom.h"
 #else
@@ -116,3 +117,4 @@ int var_setup_mac(struct var_eeprom *eeprom)
 
 	return 0;
 }
+#endif
