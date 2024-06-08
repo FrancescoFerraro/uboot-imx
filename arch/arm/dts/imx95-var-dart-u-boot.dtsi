@@ -7,7 +7,7 @@
 / {
 	aliases {
 		ethernet0 = &enetc_port0;
-		ethernet1 = &enetc_port2;
+		ethernet1 = &enetc_port1;
 	};
 };
 
@@ -203,34 +203,7 @@
 	u-boot,dm-spl;
 };
 
-&i2c3_gpio_expander_20 {
+&pca6408_2 {
 	compatible = "ti,tca6408";
-	label = "i2c3_io";
-};
-
-&i2c4_gpio_expander_21 {
-	compatible = "ti,tca6408";
-	label = "i2c4_io";
-};
-
-&i2c5_gpio_expander_21 {
-	compatible = "ti,tca6408";
-	label = "i2c5_io";
-};
-
-&i2c6_gpio_expander_21 {
-	compatible = "ti,tca6416";
-	label = "i2c6_io";
-};
-
-&flexspi1 {
-	u-boot,dm-spl;
-};
-
-&mt35xu01gbba {
-	u-boot,dm-spl;
-};
-
-&pinctrl_flexspi1 {
-	u-boot,dm-spl;
+	label = "i2c8_io";
 };

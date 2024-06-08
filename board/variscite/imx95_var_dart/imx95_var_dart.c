@@ -183,23 +183,43 @@ static void netc_phy_rst(void)
 	int ret;
 	struct gpio_desc desc;
 
-	/* ENET1_RST_B */
-	ret = dm_gpio_lookup_name("i2c5_io@21_2", &desc);
+	/* ENET0 RST GPIO5_IO_BIT16 */
+	ret = dm_gpio_lookup_name("GPIO5_16", &desc);
 	if (ret) {
-		printf("%s lookup i2c5_io@21_2 failed ret = %d\n", __func__, ret);
+		printf("%s lookup GPIO5_16 failed ret = %d\n", __func__, ret);
 		return;
 	}
 
-	ret = dm_gpio_request(&desc, "ENET1_RST_B");
+	ret = dm_gpio_request(&desc, "ENET0_GPIO_RST");
 	if (ret) {
-		printf("%s request ENET1_RST_B failed ret = %d\n", __func__, ret);
+		printf("%s request ENET0_GPIO_RST failed ret = %d\n", __func__, ret);
 		return;
 	}
 
-	/* assert the ENET1_RST_B */
+	/* assert the ENET0 RST */
 	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE | GPIOD_ACTIVE_LOW);
 	udelay(10000);
-	dm_gpio_set_value(&desc, 0); /* deassert the ENET1_RST_B */
+	dm_gpio_set_value(&desc, 0); /* deassert the ENET0 RST */
+	udelay(80000);
+
+
+	/* ENET1 RST PCA6408_2 0 */
+	ret = dm_gpio_lookup_name("i2c8_io@21_0", &desc);
+	if (ret) {
+		printf("%s lookup i2c8_io@21_0 failed ret = %d\n", __func__, ret);
+		return;
+	}
+
+	ret = dm_gpio_request(&desc, "ENET1_GPIO_RST");
+	if (ret) {
+		printf("%s request ENET1_GPIO_RST failed ret = %d\n", __func__, ret);
+		return;
+	}
+
+	/* assert the ENET0 RST */
+	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE | GPIOD_ACTIVE_LOW);
+	udelay(10000);
+	dm_gpio_set_value(&desc, 0); /* deassert the ENET0 RST */
 	udelay(80000);
 
 }
