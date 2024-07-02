@@ -2,6 +2,7 @@
 /*
  * Copyright 2023 Variscite Ltd.
  */
+#if !defined(CONFIG_IMX95)
 #include <net.h>
 #include <miiphy.h>
 #include <env.h>
@@ -56,3 +57,4 @@ int var_setup_mac(struct var_eeprom *eeprom)
 
 	return 0;
 }
+#endif
