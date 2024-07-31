@@ -290,7 +290,7 @@ int board_init(void)
 	 * and M7 and than power on M7 core.
 	 */
 
-	/* power_on_m7("mx95alt"); */
+	power_on_m7("mx95alt");
 
 #ifdef CONFIG_EXTCON_PTN5150
 	extcon_ptn5150_setup(&usb_ptn5150);
