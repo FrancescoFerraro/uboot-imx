@@ -39,7 +39,6 @@
 	pinctrl-0 = <&pinctrl_enetc1>;
 	phy-handle = <&ethphy1>;
 	phy-mode = "rgmii";
-	var-mac-address;
 	status = "okay";
 };
 
