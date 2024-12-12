@@ -135,7 +135,7 @@
 		};
 
 		/* Linux Console */
-		pinctrl_uart1_1: uart1grp-1 { /* RX/TX only */
+		pinctrl_uart1: uart1grp { /* RX/TX only */
 			fsl,pins = <
 				MX6QDL_PAD_CSI0_DAT10__UART1_TX_DATA	0x1b0b1
 				MX6QDL_PAD_CSI0_DAT11__UART1_RX_DATA	0x1b0b1
@@ -173,7 +173,7 @@
 /* Console Uart */
 &uart1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart1_1>;
+	pinctrl-0 = <&pinctrl_uart1>;
 	status = "okay";
 };
 
