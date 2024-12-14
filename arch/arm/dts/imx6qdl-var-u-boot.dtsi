@@ -26,10 +26,6 @@
 	};
 };
 
-&gpio1 {
-	bootph-pre-ram;
-};
-
 &iomuxc {
 	bootph-pre-ram;
 };

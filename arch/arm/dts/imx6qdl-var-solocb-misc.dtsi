@@ -38,7 +38,7 @@
 			>;
 		};
 
-		pinctrl_usbotg_1: usbotggrp-1 {
+		pinctrl_usbotg: usbotggrp {
 			fsl,pins = <
 				MX6QDL_PAD_GPIO_1__USB_OTG_ID		0x17059
 			>;
@@ -81,7 +81,7 @@
 
 &usbotg {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usbotg_1>;
+	pinctrl-0 = <&pinctrl_usbotg>;
 	dr_mode = "otg"; /* Use "host" if you would like to use the USB0 type A connector */
 };
 
