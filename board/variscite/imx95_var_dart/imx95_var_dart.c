@@ -164,19 +164,9 @@ int board_usb_init(int index, enum usb_init_type init)
 
 #ifdef CONFIG_USB_DWC3
 		dwc3_nxp_usb_phy_init(&dwc3_device_data);
-#endif
-#ifdef CONFIG_USB_TCPC
-		ret = tcpc_setup_ufp_mode(&port);
-		if (ret)
-			return ret;
-#endif
-#ifdef CONFIG_USB_DWC3
 		return dwc3_uboot_init(&dwc3_device_data);
 #endif
 	} else if (index == 0 && init == USB_INIT_HOST) {
-#ifdef CONFIG_USB_TCPC
-		ret = tcpc_setup_dfp_mode(&port);
-#endif
 		return ret;
 	}
 
@@ -190,27 +180,10 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 #ifdef CONFIG_USB_DWC3
 		dwc3_uboot_exit(index);
 #endif
-	} else if (index == 0 && init == USB_INIT_HOST) {
-#ifdef CONFIG_USB_TCPC
-		ret = tcpc_disable_src_vbus(&port);
-#endif
 	}
 
 	return ret;
 }
-
-#ifdef CONFIG_EXTCON_PTN5150
-int board_ehci_usb_phy_mode(struct udevice *dev)
-{
-	int usb_phy_mode = extcon_ptn5150_phy_mode(&usb_ptn5150);
-
-	/* Default to host mode if not connected */
-	if (usb_phy_mode < 0)
-		usb_phy_mode = USB_INIT_HOST;
-
-	return usb_phy_mode;
-}
-#endif
 
 static void netc_phy_rst(const char *gpio_name, const char *label)
 {
