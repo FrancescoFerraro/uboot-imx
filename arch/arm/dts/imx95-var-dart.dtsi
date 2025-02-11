@@ -8,6 +8,7 @@
 
 #include <dt-bindings/phy/phy-imx8-pcie.h>
 #include <dt-bindings/usb/pd.h>
+#include <dt-bindings/net/mxl-8611x.h>
 #include "imx95.dtsi"
 
 / {
@@ -34,10 +35,20 @@
 
 	ethphy0: ethernet-phy@0 {
 		reg = <0>;
-		compatible = "ethernet-phy-ieee802.3-c22";
 		reset-gpios = <&gpio5 16 GPIO_ACTIVE_LOW>;
 		reset-assert-us = <10000>;
 		reset-deassert-us = <80000>;
+
+		mxl-8611x,led0_cfg = <(
+			MXL8611X_LEDX_CFG_LINK_UP_RX_ACT_ON |
+			MXL8611X_LEDX_CFG_LINK_UP_TX_ACT_ON |
+			MXL8611X_LEDX_CFG_TRAFFIC_ACT_BLINK_IND
+		)>;
+		mxl-8611x,led1_cfg = <(
+			MXL8611X_LEDX_CFG_LINK_UP_10MB_ON |
+			MXL8611X_LEDX_CFG_LINK_UP_100MB_ON |
+			MXL8611X_LEDX_CFG_LINK_UP_1GB_ON
+		)>;
 	};
 };
 
