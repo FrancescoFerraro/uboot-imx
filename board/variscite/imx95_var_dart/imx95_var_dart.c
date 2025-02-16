@@ -203,7 +203,7 @@ static void netc_phy_rst(const char *gpio_name, const char *label)
 	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE | GPIOD_ACTIVE_LOW);
 	udelay(10000);
 	dm_gpio_set_value(&desc, 0); /* deassert the ENET_RST_B */
-	udelay(80000);
+	udelay(100000);
 
 }
 

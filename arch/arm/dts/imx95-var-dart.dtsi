@@ -37,7 +37,7 @@
 		reg = <0>;
 		reset-gpios = <&gpio5 16 GPIO_ACTIVE_LOW>;
 		reset-assert-us = <10000>;
-		reset-deassert-us = <80000>;
+		reset-deassert-us = <100000>;
 
 		mxl-8611x,led0_cfg = <(
 			MXL8611X_LEDX_CFG_LINK_UP_RX_ACT_ON |
