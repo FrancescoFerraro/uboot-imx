@@ -40,7 +40,7 @@
 	"sd_dev=1\0" \
 
 /* Initial environment variables */
-#define CFG_EXTRA_ENV_SETTINGS		\
+#define CFG_EXTRA_ENV_SETTINGS	\
 	CFG_MFG_ENV_SETTINGS \
 	BOOTENV \
 	AHAB_ENV \
@@ -56,9 +56,9 @@
 	"backlight_disable=gpio clear GPIO2_25\0" \
 	"backlight_enable=gpio set GPIO2_25\0" \
 	"console=ttyLP0,115200 earlycon\0" \
-	"fdt_addr_r=0x93000000\0"			\
-	"fdt_addr=0x93000000\0"			\
-	"fdt_high=0xffffffffffffffff\0"		\
+	"fdt_addr_r=0x93000000\0" \
+	"fdt_addr=0x93000000\0"	\
+	"fdt_high=0xffffffffffffffff\0"	\
 	"cntr_addr=0xA8000000\0"			\
 	"cntr_file=os_cntr_signed.bin\0" \
 	"bootdir=/boot\0" \
