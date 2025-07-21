@@ -29,6 +29,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 extern int var_setup_mac(struct var_eeprom *eeprom);
+extern int board_fix_fdt_fuse(void *fdt);
 
 /* Carrier board EEPROM */
 #define CARRIER_EEPROM_I2C_NAME		"i2c@42530000"
@@ -333,3 +334,13 @@ void board_quiesce_devices(void)
 		return;
 	}
 }
+
+#if IS_ENABLED(CONFIG_OF_BOARD_FIXUP)
+int board_fix_fdt(void *fdt)
+{
+	/* Remove nodes based on fuses. */
+	board_fix_fdt_fuse(fdt);
+	
+	return 0;
+}
+#endif /*CONFIG_OF_BOARD_FIXUP*/
