@@ -6,7 +6,6 @@
  * Copyright 2023 MaxLinear Inc.
  * Author: Nate Drude <nate.d@variscite.com>
  */
-#include <common.h>
 #include <phy.h>
 #include <linux/bitops.h>
 #include <linux/bitfield.h>
