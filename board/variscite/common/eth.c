@@ -3,7 +3,6 @@
  * Copyright (C) 2020-2025 Variscite Ltd.
  */
 
-#include <common.h>
 #include <net.h>
 #include <miiphy.h>
 #include <env.h>
