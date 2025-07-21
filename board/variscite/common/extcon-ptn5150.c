@@ -6,7 +6,6 @@
  * Author: Nate Drude <nate.d@variscite.com>
  */
 
-#include <common.h>
 #include <dm.h>
 #include <i2c.h>
 #include <linux/bitfield.h>
