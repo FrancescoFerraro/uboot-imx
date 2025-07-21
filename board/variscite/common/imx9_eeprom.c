@@ -70,8 +70,13 @@ typedef struct {
 
 static int var_scmi_eeprom_read(u8 *buf, u32 size)
 {
+	struct udevice *dev;
 	int ret;
 	int offset = 0;
+
+	ret = uclass_get_device_by_name(UCLASS_CLK, "protocol@14", &dev);
+	if (ret)
+		return ret;
 
 	while (size) {
 		scmi_eeprom_xfer_in_t xfer_in = {
@@ -88,11 +93,11 @@ static int var_scmi_eeprom_read(u8 *buf, u32 size)
 			.buffer = {0},
 		};
 
-		struct scmi_msg msg = SCMI_MSG_IN(SCMI_PROTOCOL_ID_MISC,
+		struct scmi_msg msg = SCMI_MSG_IN(SCMI_PROTOCOL_ID_IMX_MISC,
 						  SCMI_EEPROM_XFER_CMD,
 						  xfer_in, xfer_out);
 
-		ret = devm_scmi_process_msg(gd->arch.scmi_dev, &msg);
+		ret = devm_scmi_process_msg(dev, &msg);
 
 		if (ret)
 			return ret;
