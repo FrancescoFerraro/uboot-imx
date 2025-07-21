@@ -3,7 +3,6 @@
  * Copyright (C) 2018-2025 Variscite Ltd.
  */
 
-#include <common.h>
 #include <command.h>
 #include <dm.h>
 #include <i2c.h>
