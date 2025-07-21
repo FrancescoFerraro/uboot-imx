@@ -4,7 +4,6 @@
  * Copyright 2020-2025 Variscite Ltd.
  */
 
-#include <common.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/global_data.h>
 #include <asm/armv8/mmu.h>
