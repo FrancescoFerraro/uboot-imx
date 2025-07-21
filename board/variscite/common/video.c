@@ -5,8 +5,8 @@
  * Copyright 2020-2025 Variscite Ltd.
  */
 
+#include <vsprintf.h>
 #include <env.h>
-#include <common.h>
 #include <splash.h>
 #include <mmc.h>
 
