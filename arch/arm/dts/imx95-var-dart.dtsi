@@ -10,6 +10,7 @@
 #include <dt-bindings/usb/pd.h>
 #include <dt-bindings/net/mxl-8611x.h>
 #include "imx95.dtsi"
+#include "imx95-u-boot.dtsi"
 
 / {
 	compatible = "variscite,imx95-var-dart", "fsl,imx95";
