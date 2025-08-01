@@ -30,6 +30,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 extern int var_setup_mac(struct var_eeprom *eeprom);
 extern int board_fix_fdt_fuse(void *fdt);
+static int board_sm_cfg_info(void);
 
 /* Carrier board EEPROM */
 #define CARRIER_EEPROM_I2C_NAME		"i2c@42530000"
@@ -301,6 +302,8 @@ int board_late_init(void)
 
 	var_eeprom_print_prod_info(ep);
 
+	board_sm_cfg_info();
+
 	return 0;
 }
 
@@ -333,6 +336,50 @@ void board_quiesce_devices(void)
 		printf("%s: Failed for NETC MIX: %d\n", __func__, ret);
 		return;
 	}
+}
+
+static int imx9_scmi_misc_cfginfo(u32 *msel, char *cfgname)
+{
+	struct scmi_cfg_info_out out;
+	struct scmi_msg msg = {
+		.protocol_id = SCMI_PROTOCOL_ID_IMX_MISC,
+		.message_id = SCMI_MISC_CFG_INFO,
+		.in_msg = (u8 *)NULL,
+		.in_msg_sz = 0,
+		.out_msg = (u8 *)&out,
+		.out_msg_sz = sizeof(out),
+	};
+	int ret;
+	struct udevice *dev;
+
+	ret = uclass_get_device_by_name(UCLASS_CLK, "protocol@14", &dev);
+	if (ret)
+		return ret;
+
+	ret = devm_scmi_process_msg(dev, &msg);
+	if(ret == 0 && out.status == 0) {
+		strcpy(cfgname, (const char *)out.cfgname);
+	} else {
+		printf("Failed to get cfg name, scmi_err = %d\n",
+			out.status);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int board_sm_cfg_info(void)
+{
+	int ret;
+	u32 msel = 0;
+	char cfgname[SCMI_MISC_MAX_CFGNAME];
+
+	ret = imx9_scmi_misc_cfginfo(&msel, cfgname);
+	if (ret)
+		snprintf(cfgname, sizeof(cfgname), "Unknown");
+
+	printf("SM: cfg: %s, msel: %u\n", cfgname, msel);
+	return 0;
 }
 
 #if IS_ENABLED(CONFIG_OF_BOARD_FIXUP)
