@@ -8,3 +8,4 @@ jobs:
     uses: varigit-dev/action-workflows/.github/workflows/defconfig-check.yml@master
     with:
       defconfig: >-
+        arm64:imx95_var_dart_defconfig
