@@ -183,20 +183,20 @@ static void netc_phy_rst(const char *gpio_name, const char *label)
 {
 	int ret;
 	struct gpio_desc desc;
-
+printf("FF: netc_phy_rst 1\n");
 	/* ENET_RST_B */
 	ret = dm_gpio_lookup_name(gpio_name, &desc);
 	if (ret) {
 		printf("%s lookup %s failed ret = %d\n", __func__, gpio_name, ret);
 		return;
 	}
-
+printf("FF: netc_phy_rst 2\n");
 	ret = dm_gpio_request(&desc, label);
 	if (ret) {
 		printf("%s request %s failed ret = %d\n", __func__, label, ret);
 		return;
 	}
-
+printf("FF: netc_phy_rst 3\n");
 	/* assert the ENET_RST_B */
 	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE | GPIOD_ACTIVE_LOW);
 	udelay(10000);
@@ -220,7 +220,7 @@ void netc_init(void)
 
 	netc_phy_rst("GPIO5_16", "ENET1_RST_B");	//GPIO_IO36_ENET1_nRST
 	netc_phy_rst("i2c8_io@21_0", "ENET2_RST_B");	//ENET1_PHY_RST_B
-	netc_phy_rst("i2c3_io@22_5", "ETH10G_SEL");
+	netc_phy_rst("gpio@22_5", "ETH10G_SEL");
 
 	pci_init();
 }
