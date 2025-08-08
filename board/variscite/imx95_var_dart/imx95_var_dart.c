@@ -218,8 +218,9 @@ void netc_init(void)
 
 	set_clk_netc(ENET_125MHZ);
 
-	netc_phy_rst("GPIO5_16", "ENET1_RST_B");
-	netc_phy_rst("i2c8_io@21_0", "ENET2_RST_B");
+	netc_phy_rst("GPIO5_16", "ENET1_RST_B");	//GPIO_IO36_ENET1_nRST
+	netc_phy_rst("i2c8_io@21_0", "ENET2_RST_B");	//ENET1_PHY_RST_B
+	netc_phy_rst("i2c3_io@22_5", "ETH10G_SEL");
 
 	pci_init();
 }

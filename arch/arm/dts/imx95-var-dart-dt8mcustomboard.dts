@@ -153,20 +153,6 @@
 		reg = <0x22>;
 		gpio-controller;
 		#gpio-cells = <2>;
-
-		pcie2-sel {
-			gpio-hog;
-			gpios = <6 GPIO_ACTIVE_HIGH>;
-			output-low;
-			line-name = "pcie-clk-sw";
-		};
-
-		sfp-sel {
-			gpio-hog;
-			gpios = <5 GPIO_ACTIVE_HIGH>;
-			output-high;
-			line-name = "sfp-sw";
-		};
 	};
 };
 
