@@ -105,6 +105,13 @@
 	"loadcntr=load mmc ${mmcdev}:${mmcpart} ${cntr_addr} ${cntr_file}\0" \
 	"auth_os=auth_cntr ${cntr_addr}\0" \
 	"boot_os=booti ${loadaddr} - ${fdt_addr_r};\0" \
+	"m7_load_addr=0x90000000\0" \
+	"m7_addr=0x203c0000\0" \
+	"m7_addr_auxview=0x00000000\0" \
+	"m7_bin=hello_world.bin\0" \
+	"use_m7=no\0" \
+	"loadm7bin=load mmc ${mmcdev}:${mmcpart} ${m7_load_addr} ${bootdir}/${m7_bin} && cp.b ${m7_load_addr} ${m7_addr} ${filesize};\0" \
+	"runm7bin=echo Booting M7 from TCM; stopaux 1; bootaux ${m7_addr_auxview} 1;\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
 		"run optargs; " \
@@ -159,6 +166,9 @@
 		"fi;\0" \
 	"bsp_bootcmd=echo Running BSP bootcmd ...; " \
 		"mmc dev ${mmcdev}; if mmc rescan; then " \
+			"if test ${use_m7} = yes && run loadm7bin; then " \
+				"run runm7bin; " \
+			"fi; " \
 			"if run loadbootscript; then " \
 				"run bootscript; " \
 			"else " \
