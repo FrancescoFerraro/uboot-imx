@@ -703,7 +703,8 @@ int power_on_m7(char *name)
 	}
 
 	if (strncmp(out.cfgname, name, MISC_MAX_CFGNAME)) {
-		printf("cfg name not match %s:%s, ignore\n", name, out.cfgname);
+		//printf("cfg name not match %s:%s, ignore\n", name, out.cfgname);
+		printf("Cortex M7 core not powered ON\n");
 		return -EINVAL;
 	}
 
