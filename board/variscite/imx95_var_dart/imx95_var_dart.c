@@ -248,19 +248,7 @@ int board_init(void)
 
 	netc_init();
 
-	/*
-	 * NXP uses mx95alt.cfg config in System Manager for MCUXpresso testing and
-	 * mx95evk.cfg config for Linux system testing.
-	 *
-	 * Building SM with mx95alt.cfg configuration is needed to run the Cortex M7 demos from U-Boot
-	 * and from linux user space using remoteproc.
-	 * Currently,  building SM with mx95alt.cfg generates an issue with USB support from kernel side
-	 * for this reason the SM configuration file used is mx95evk.cfg.
-	 *
-	 * Behind all this, the power_on_m7() is disabled.
-	 */
-
-	/* power_on_m7("mx95alt"); */
+	power_on_m7("dart-mx95-m7");
 
 #ifdef CONFIG_EXTCON_PTN5150
 	extcon_ptn5150_setup(&usb_ptn5150);
