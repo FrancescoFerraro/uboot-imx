@@ -41,6 +41,8 @@ CONFIG_BOOTDELAY=1
 CONFIG_OF_BOARD_SETUP=y
 CONFIG_OF_SYSTEM_SETUP=y
 CONFIG_BOOTCOMMAND="run bsp_bootcmd"
+CONFIG_USE_PREBOOT=y
+CONFIG_PREBOOT="if test $board_name = VAR-SMARC-MX8M-PLUS; then echo Resetting USB HUB TUSB8041 ...; i2c dev 0; i2c read 0x20 0x03.1 1 ${loadaddr}; setexpr.b out_port_reg *${loadaddr}; setexpr new_out_port_reg ${out_port_reg} \\\\& 0xF7; i2c mw 0x20 0x03.1 ${new_out_port_reg} 1; i2c read 0x20 0x07.1 1 ${loadaddr}; setexpr.b conf_reg *${loadaddr}; setexpr conf_reg ${conf_reg} \\\\& 0xF7; i2c mw 0x20 0x07.1 ${conf_reg} 1; sleep 0.1; setexpr conf_reg ${conf_reg} \\\\| 0x08; i2c mw 0x20 0x07.1 ${conf_reg} 1; fi;"
 CONFIG_DEFAULT_FDT_FILE="imx8mp-var-dart-dt8mcustomboard.dtb"
 CONFIG_SYS_CBSIZE=2048
 CONFIG_SYS_PBSIZE=2074
