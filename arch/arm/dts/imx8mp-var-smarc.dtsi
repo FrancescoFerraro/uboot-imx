@@ -34,22 +34,12 @@
 		ethphy0: ethernet-phy@4 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <4>;
-			at803x,eee-disabled;
-			eee-broken-1000t;
 			reset-gpios = <&pcal6416 6 GPIO_ACTIVE_LOW>;
 			reset-assert-us = <10000>;
 			reset-deassert-us = <100000>;
 			vddio-supply = <&vddio0>;
-			mxl-8611x,led0_cfg = <(
-				MXL8611X_LEDX_CFG_LINK_UP_RX_ACT_ON |
-				MXL8611X_LEDX_CFG_LINK_UP_TX_ACT_ON |
-				MXL8611X_LEDX_CFG_TRAFFIC_ACT_BLINK_IND
-			)>;
-			mxl-8611x,led1_cfg = <(
-				MXL8611X_LEDX_CFG_LINK_UP_10MB_ON |
-				MXL8611X_LEDX_CFG_LINK_UP_100MB_ON |
-				MXL8611X_LEDX_CFG_LINK_UP_1GB_ON
-			)>;
+			ti,min-output-impedance;
+			enet-phy-lane-no-swap;
 
 			vddio0: vddio-regulator {
 				regulator-min-microvolt = <1800000>;
@@ -60,23 +50,12 @@
 		ethphy1: ethernet-phy@5 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <5>;
-			at803x,eee-disabled;
-			eee-broken-1000t;
 			reset-gpios = <&pcal6416 7 GPIO_ACTIVE_LOW>;
 			reset-assert-us = <10000>;
 			reset-deassert-us = <100000>;
 			vddio-supply = <&vddio1>;
-
-			mxl-8611x,led0_cfg = <(
-				MXL8611X_LEDX_CFG_LINK_UP_RX_ACT_ON |
-				MXL8611X_LEDX_CFG_LINK_UP_TX_ACT_ON |
-				MXL8611X_LEDX_CFG_TRAFFIC_ACT_BLINK_IND
-			)>;
-			mxl-8611x,led1_cfg = <(
-				MXL8611X_LEDX_CFG_LINK_UP_10MB_ON |
-				MXL8611X_LEDX_CFG_LINK_UP_100MB_ON |
-				MXL8611X_LEDX_CFG_LINK_UP_1GB_ON
-			)>;
+			ti,min-output-impedance;
+			enet-phy-lane-no-swap;
 
 			vddio1: vddio-regulator {
 				regulator-min-microvolt = <1800000>;
@@ -145,7 +124,14 @@
 	/* TPM */
 	st33ktpm2xi2c: st33ktpm2xi2c@2e {
 		compatible = "tcg,tpm-tis-i2c";
+		label = "tpm";
 		reg = <0x2e>;
+		/*
+		* reset-gpios is not used by the TPM driver, but forces
+		* probe ordering: ensures GPIO expander is initialized
+		* before the TPM driver probes.
+		*/
+		reset-gpios = <&pcal6416 13 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
 };
