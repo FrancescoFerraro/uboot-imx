@@ -115,8 +115,10 @@ static void spl_dram_init(void)
 
 	if (var_detect_board_id() == BOARD_ID_DART)
 		carrier_eeprom_bus = CARRIER_EEPROM_BUS_DART;
-	else
+	else if (var_detect_board_id() == BOARD_ID_SOM)
 		carrier_eeprom_bus = CARRIER_EEPROM_BUS_SOM;
+	else
+		carrier_eeprom_bus = CARRIER_EEPROM_BUS_SMARC;
 
 	/* EEPROM initialization */
 	var_eeprom_read_header(&eeprom);
@@ -136,7 +138,7 @@ static void spl_uart_init(void)
 		imx_iomux_v3_setup_multiple_pads(uart_pads_dart,
 			ARRAY_SIZE(uart_pads_dart));
 		init_uart_clk(0);
-	} else if (board_id == BOARD_ID_SOM) {
+	} else if ((board_id == BOARD_ID_SOM) || (board_id == BOARD_ID_SMARC)) {
 		imx_iomux_v3_setup_multiple_pads(uart_pads_som,
 			ARRAY_SIZE(uart_pads_som));
 		init_uart_clk(1);
@@ -222,6 +224,8 @@ int board_fit_config_name_match(const char *name)
 		return 0;
 	} else if ((board_id == BOARD_ID_SOM) && !strcmp(name, "imx8mp-var-som-symphony")) {
 		return 0;
+	} else if ((board_id == BOARD_ID_SMARC) && !strcmp(name, "imx8mp-var-smarc-echo")) {
+		return 0;
 	}
 
 	return -1;
@@ -296,16 +300,18 @@ void board_init_f(ulong dummy)
 #ifdef CONFIG_POWER
 	/* I2C Bus 0 initialization - PMIC/SOM EEPROM */
 	if (var_detect_board_id() == BOARD_ID_DART)
+		/* DART-MX8M-PLUS */
 		setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pads_dart);
 	else
+		/* VAR-SOM-MX8M-PLUS and VAR-SMARC-MX8M-PLUS */
 		setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pads_som);
 #endif
 
 	if (var_detect_board_id() == BOARD_ID_DART)
-		/* I2C Bus 1 initialization - Carrier EEPROM reading */
+		/* I2C Bus 1 initialization - DT8MCB Carrier EEPROM reading */
 		setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c1_pads_dart);
 	else
-		/* I2C Bus 3 initialization - Carrier EEPROM reading */
+		/* I2C Bus 3 initialization - Symphony and Echo Carriers EEPROM reading */
 		setup_i2c(3, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c4_pads_som);
 
 	/* PMIC initialization */
