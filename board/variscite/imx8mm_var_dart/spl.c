@@ -78,6 +78,78 @@ struct dram_fixup_param fixup_regs_ddrc_cfg[] = {
 	{ 0, 0, 0, 0 }
 };
 
+//*******************************************************************************************************************************
+#include <common.h>
+#include <asm/arch/ddr.h>
+
+static void dump_dram_cfg_param(const char *name,
+				struct dram_cfg_param *cfg,
+				unsigned int num)
+{
+	unsigned int i;
+
+	printf("\n%s: ptr=%p num=0x%08x\n", name, cfg, num);
+
+	for (i = 0; i < num; i++) {
+		printf("%s[%04x]: reg=0x%08x val=0x%08x\n",
+		       name, i, cfg[i].reg, cfg[i].val);
+	}
+}
+
+static void dump_dram_fsp_msg(const char *name,
+			      struct dram_fsp_msg *fsp,
+			      unsigned int num)
+{
+	unsigned int i;
+
+	printf("\n%s: ptr=%p num=0x%08x\n", name, fsp, num);
+
+	for (i = 0; i < num; i++) {
+		printf("%s[%04x]: drate=0x%08x fw_type=0x%08x cfg=%p cfg_num=0x%08x\n",
+		       name, i,
+		       fsp[i].drate,
+		       fsp[i].fw_type,
+		       fsp[i].fsp_cfg,
+		       fsp[i].fsp_cfg_num);
+
+		dump_dram_cfg_param("fsp_cfg",
+				    fsp[i].fsp_cfg,
+				    fsp[i].fsp_cfg_num);
+	}
+}
+
+void dump_dram_timing_info(struct dram_timing_info *t)
+{
+	unsigned int i;
+
+	printf("\n=== DRAM TIMING INFO ===\n");
+
+	printf("ddrphy_fw_offset = 0x%08x\n", t->ddrphy_fw_offset);
+
+	printf("ddrc_cfg         = %p\n", t->ddrc_cfg);
+	printf("ddrc_cfg_num     = 0x%08x\n", t->ddrc_cfg_num);
+
+	printf("ddrphy_cfg       = %p\n", t->ddrphy_cfg);
+	printf("ddrphy_cfg_num   = 0x%08x\n", t->ddrphy_cfg_num);
+
+	printf("fsp_msg          = %p\n", t->fsp_msg);
+	printf("fsp_msg_num      = 0x%08x\n", t->fsp_msg_num);
+
+	printf("ddrphy_pie       = %p\n", t->ddrphy_pie);
+	printf("ddrphy_pie_num   = 0x%08x\n", t->ddrphy_pie_num);
+
+	for (i = 0; i < ARRAY_SIZE(t->fsp_table); i++)
+		printf("fsp_table[%x]    = 0x%08x\n", i, t->fsp_table[i]);
+
+	dump_dram_cfg_param("ddrc_cfg", t->ddrc_cfg, t->ddrc_cfg_num);
+	dump_dram_cfg_param("ddrphy_cfg", t->ddrphy_cfg, t->ddrphy_cfg_num);
+	dump_dram_fsp_msg("fsp_msg", t->fsp_msg, t->fsp_msg_num);
+	dump_dram_cfg_param("ddrphy_pie", t->ddrphy_pie, t->ddrphy_pie_num);
+
+	printf("=== END DRAM TIMING INFO ===\n");
+}
+//*******************************************************************************************************************************
+
 static void spl_dram_init(void)
 {
 	int id;
@@ -94,6 +166,7 @@ static void spl_dram_init(void)
 		var_eeprom_adjust_dram(&eeprom, &dram_timing_ddr4);
 		var_eeprom_apply_dram_fixup(&eeprom, fixup_regs_ddrc_cfg, dram_timing_ddr4.ddrc_cfg,
 					    dram_timing_ddr4.ddrc_cfg_num);
+		dump_dram_timing_info(&dram_timing_ddr4);
 		ddr_init(&dram_timing_ddr4);
 	}
 	else {
