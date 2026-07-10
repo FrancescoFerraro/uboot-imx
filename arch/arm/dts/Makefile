@@ -842,7 +842,13 @@ dtb-$(CONFIG_MX6UL) += \
 	imx6ul-liteboard.dtb \
 	imx6ul-phytec-segin-ff-rdk-nand.dtb \
 	imx6ul-pico-hobbit.dtb \
-	imx6ul-pico-pi.dtb
+	imx6ul-pico-pi.dtb \
+	imx6ul-var-dart-6ulcustomboard-emmc-sd-card.dtb \
+	imx6ul-var-dart-6ulcustomboard-nand-sd-card.dtb \
+	imx6ul-var-som-concerto-board-emmc-sd-card.dtb \
+	imx6ul-var-som-concerto-board-nand-sd-card.dtb \
+	imx6ul-var-som-symphony-board-emmc-sd-card.dtb \
+	imx6ul-var-som-symphony-board-nand-sd-card.dtb
 
 dtb-$(CONFIG_MX6ULL) += \
 	imx6ull-14x14-evk.dtb \
@@ -856,9 +862,21 @@ dtb-$(CONFIG_MX6ULL) += \
 	imx6ull-phytec-segin-ff-rdk-emmc.dtb \
 	imx6ull-dart-6ul.dtb \
 	imx6ull-somlabs-visionsom.dtb \
+	imx6ull-var-dart-6ulcustomboard-emmc-sd-card.dtb \
+	imx6ull-var-dart-6ulcustomboard-nand-sd-card.dtb \
+	imx6ull-var-som-concerto-board-emmc-sd-card.dtb \
+	imx6ull-var-som-concerto-board-nand-sd-card.dtb \
+	imx6ull-var-som-symphony-board-emmc-sd-card.dtb \
+	imx6ull-var-som-symphony-board-nand-sd-card.dtb \
 	imx6ulz-14x14-evk.dtb \
 	imx6ulz-14x14-evk-emmc.dtb \
-	imx6ulz-14x14-evk-gpmi-weim.dtb
+	imx6ulz-14x14-evk-gpmi-weim.dtb \
+	imx6ulz-var-dart-6ulcustomboard-emmc-sd-card.dtb \
+	imx6ulz-var-dart-6ulcustomboard-nand-sd-card.dtb \
+	imx6ulz-var-som-concerto-board-emmc-sd-card.dtb \
+	imx6ulz-var-som-concerto-board-nand-sd-card.dtb \
+	imx6ulz-var-som-symphony-board-emmc-sd-card.dtb \
+	imx6ulz-var-som-symphony-board-nand-sd-card.dtb
 
 dtb-$(CONFIG_ARCH_MX6) += \
 	imx6q-apalis-eval.dtb \
